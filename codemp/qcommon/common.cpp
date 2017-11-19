@@ -1130,6 +1130,10 @@ void Com_Init( char *commandLine ) {
 
 	try
 	{
+		// multiprotocol support
+		// startup will be UNDEFINED
+		MV_SetCurrentGameversion(VERSION_UNDEF);
+
 		// initialize the weak pseudo-random number generator for use later.
 		Com_InitRand();
 
@@ -1241,7 +1245,7 @@ void Com_Init( char *commandLine ) {
 
 		com_bootlogo = Cvar_Get( "com_bootlogo", "1", CVAR_ARCHIVE_ND, "Show intro movies" );
 
-		s = va("%s %s %s", JK_VERSION_OLD, PLATFORM_STRING, SOURCE_DATE );
+		s = va("%s %s %s", (MV_GetCurrentGameversion() == VERSION_1_00 ? JK_VERSION_OLD_1_00 : JK_VERSION_OLD), PLATFORM_STRING, SOURCE_DATE );
 		com_version = Cvar_Get ("version", s, CVAR_ROM | CVAR_SERVERINFO );
 
 		SE_Init();
@@ -1253,6 +1257,16 @@ void Com_Init( char *commandLine ) {
 		// Pick a random port value
 		Com_RandomBytes( (byte*)&qport, sizeof(int) );
 		Netchan_Init( qport & 0xffff );	// pick a port value that should be nice and random
+
+		// Check for assets3 to figure out if patch 1.01 is installed
+		if (FS_AllPath_Base_FileExists("assets3.pk3"))
+		{
+			gotPatchInstalled = qtrue;
+		}
+		else
+		{
+			gotPatchInstalled = qfalse;
+		}
 
 		VM_Init();
 		SV_Init();
@@ -2052,4 +2066,43 @@ uint32_t ConvertUTF8ToUTF32( char *utf8CurrentChar, char **utf8NextChar )
 	*utf8NextChar = c;
 
 	return utf32;
+}
+
+// multiprotocol support
+mvversion_t glbpro;
+qboolean disconnecting;
+qboolean gotPatchInstalled = qfalse;
+
+void MV_SetCurrentGameversion(mvversion_t version) {
+	if ( !gotPatchInstalled )
+	{ // We seem not to have the patch
+		if ( version > VERSION_1_00 )
+		{ // Without the patch we can't go above 1.00, the fact that we are attempting it right now probably means trouble
+			Com_Error(ERR_FATAL, "MV_SetCurrentGameversion: attempted to set version > 1.00 without assets3 present.\n");
+		}
+	}
+
+	glbpro = version;
+
+	if ( com_fullyInitialized )
+	{ // Only do this if we're fully initialized
+		Cvar_Set ("version", va("%s %s %s", (MV_GetCurrentGameversion() == VERSION_1_00 ? JK_VERSION_OLD_1_00 : JK_VERSION_OLD), PLATFORM_STRING, SOURCE_DATE ));
+	}
+}
+
+mvversion_t MV_GetCurrentGameversion() {
+	if ( !gotPatchInstalled ) return VERSION_1_00;
+	return glbpro;
+}
+
+mvprotocol_t MV_GetCurrentProtocol() {
+	switch ( MV_GetCurrentGameversion() )
+	{
+		case VERSION_1_00:
+			return PROTOCOL25;
+		case VERSION_1_01:
+			return PROTOCOL26;
+		default:
+			return PROTOCOL_UNDEF;
+	}
 }

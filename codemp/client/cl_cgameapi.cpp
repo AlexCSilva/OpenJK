@@ -292,6 +292,7 @@ void CGVM_MiscEnt( void ) {
 }
 
 void CGVM_CameraShake( void ) {
+	if ( MV_GetCurrentGameversion() == VERSION_1_00 ) return;
 	if ( cgvm->isLegacy ) {
 		VM_Call( cgvm, CG_FX_CAMERASHAKE );
 		return;
@@ -831,6 +832,7 @@ static void CGVM_Cmd_RemoveCommand( const char *cmd_name ) {
 // legacy syscall
 
 intptr_t CL_CgameSystemCalls( intptr_t *args ) {
+	if ( MV_GetCurrentGameversion() == VERSION_1_00 && args[0] >= CG_G2_COLLISIONDETECTCACHE ) args[0]++;
 	switch ( args[0] ) {
 		//rww - alright, DO NOT EVER add a GAME/CGAME/UI generic call without adding a trap to match, and
 		//all of these traps must be shared and have cases in sv_game, cl_cgame, and cl_ui. They must also

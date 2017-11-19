@@ -272,6 +272,7 @@ extern	cvar_t	*sv_autoDemoBots;
 extern	cvar_t	*sv_autoDemoMaxMaps;
 extern	cvar_t	*sv_legacyFixForceSelect;
 extern	cvar_t	*sv_banFile;
+extern	cvar_t	*mv_serverversion;
 
 extern	serverBan_t serverBans[SERVER_MAXBANS];
 extern	int serverBansCount;

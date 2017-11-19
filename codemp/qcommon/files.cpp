@@ -759,6 +759,17 @@ qboolean FS_FileExists( const char *file )
 	return FS_FileInPathExists(FS_BuildOSPath(fs_homepath->string, fs_gamedir, file));
 }
 
+qboolean FS_AllPath_Base_FileExists(const char *file)
+{
+	if ( FS_FileInPathExists(FS_BuildOSPath(fs_basepath->string, BASEGAME, file))
+		|| FS_FileInPathExists(FS_BuildOSPath(fs_homepath->string, BASEGAME, file)) )
+	{
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
 /*
 ================
 FS_SV_FileExists
@@ -1331,6 +1342,14 @@ long FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean unique
 				// disregard if it doesn't match one of the allowed pure pak files
 				if ( !FS_PakIsPure(search->pack) ) {
 					continue;
+				}
+
+				// version specific pk3's
+				if ( MV_GetCurrentGameversion() == VERSION_1_00 && !Q_stricmp(search->pack->pakBasename, "assets3") )
+				{
+					// prevent loading unsupported dll's
+					if (!Q_stricmp(filename, "cgamex86.dll") || !Q_stricmp(filename, "uix86.dll") || !Q_stricmp(filename, "jampgamex86.dll"))
+						continue;
 				}
 
 				// autoexec.cfg and openjk.cfg can only be loaded outside of pk3 files.

@@ -1723,6 +1723,7 @@ static void GVM_Cvar_Set( const char *var_name, const char *value ) {
 // legacy syscall
 
 intptr_t SV_GameSystemCalls( intptr_t *args ) {
+	if ( MV_GetCurrentGameversion() == VERSION_1_00 && args[0] >= G_G2_COLLISIONDETECTCACHE ) args[0]++;
 	switch( args[0] ) {
 
 		//rww - alright, DO NOT EVER add a game/cgame/ui generic call without adding a trap to match, and
