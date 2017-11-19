@@ -731,6 +731,7 @@ static void UIVM_Cmd_RemoveCommand( const char *cmd_name ) {
 // legacy syscall
 
 intptr_t CL_UISystemCalls( intptr_t *args ) {
+	if ( MV_GetCurrentGameversion() == VERSION_1_00 && args[0] >= UI_G2_COLLISIONDETECTCACHE ) args[0]++;
 	switch ( args[0] ) {
 		//rww - alright, DO NOT EVER add a GAME/CGAME/UI generic call without adding a trap to match, and
 		//all of these traps must be shared and have cases in sv_game, cl_cgame, and cl_ui. They must also

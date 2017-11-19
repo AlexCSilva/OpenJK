@@ -582,6 +582,20 @@ Ghoul2 Insert End
 	re->G2API_SetTime(sv.time,0);
 	//rww - RAGDOLL_END
 
+	// decide which serverversion to host
+	mv_serverversion = Cvar_Get("mv_serverversion", "1.01", CVAR_ARCHIVE | CVAR_LATCH);
+	if (FS_AllPath_Base_FileExists("assets3.pk3") && (!strcmp(mv_serverversion->string, "auto") || !strcmp(mv_serverversion->string, "1.01"))) {
+		Com_Printf("serverversion set to 1.01\n");
+		MV_SetCurrentGameversion(VERSION_1_01);
+	}
+	else
+	{
+		Com_Printf("serverversion set to 1.00\n");
+		MV_SetCurrentGameversion(VERSION_1_00);
+	}
+
+	Cvar_Set("protocol", va("%i", MV_GetCurrentProtocol()));
+
 	// make sure we are not paused
 	Cvar_Set("cl_paused", "0");
 

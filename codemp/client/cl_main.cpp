@@ -434,6 +434,7 @@ void CL_DemoCompleted( void ) {
 	//I'm not sure why it ever worked in TA, but whatever. This code will bring us back to the main menu
 	//after a demo is finished playing instead.
 	CL_Disconnect_f();
+	MV_SetCurrentGameversion(VERSION_UNDEF); // Set the protocol to undefined after completing the demo.
 	S_StopAllSounds();
 	UIVM_SetActiveMenu( UIMENU_MAIN );
 
@@ -562,6 +563,14 @@ void CL_PlayDemo_f( void ) {
 	clc.demoplaying = qtrue;
 	Q_strncpyz( cls.servername, Cmd_Argv(1), sizeof( cls.servername ) );
 
+	// Set the protocol according to the the demo-file.
+	if ( !Q_stricmp( name + strlen(name) - strlen(".dm_25"), ".dm_25" ) ) {
+		MV_SetCurrentGameversion(VERSION_1_00);
+	}
+	else if ( !Q_stricmp( name + strlen(name) - strlen(".dm_26"), ".dm_26" ) ) {
+		MV_SetCurrentGameversion(VERSION_1_01);
+	}
+
 	// read demo messages until connected
 	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED ) {
 		CL_ReadDemoMessage();
@@ -668,6 +677,12 @@ void CL_FlushMemory( void ) {
 		CM_ClearMap();
 		// clear the whole hunk
 		Hunk_Clear();
+
+		if ( disconnecting )
+		{
+			MV_SetCurrentGameversion(VERSION_UNDEF);
+			disconnecting = qfalse;
+		}
 	}
 	else {
 		// clear all the client data on the hunk
@@ -820,6 +835,11 @@ void CL_Disconnect( qboolean showMainMenu ) {
 		CL_WritePacket();
 		CL_WritePacket();
 		CL_WritePacket();
+		disconnecting = qtrue;
+	}
+
+	if (cls.state >= CA_CHALLENGING) {
+		disconnecting = qtrue;
 	}
 
 	// Remove pure paks
@@ -1044,6 +1064,9 @@ void CL_Connect_f( void ) {
 
 	CL_Disconnect( qtrue );
 	Con_Close();
+
+	// needed because the protocol could have been changed
+	CL_FlushMemory();
 
 	Q_strncpyz( cls.servername, server, sizeof(cls.servername) );
 
@@ -1565,17 +1588,22 @@ void CL_CheckForResend( void ) {
 		// requesting a challenge
 
 		// The challenge request shall be followed by a client challenge so no malicious server can hijack this connection.
+		NET_OutOfBandPrint(NS_CLIENT, clc.serverAddress, "getinfo"); // for multiversion
 		Com_sprintf(data, sizeof(data), "getchallenge %d", clc.challenge);
 
 		NET_OutOfBandPrint(NS_CLIENT, clc.serverAddress, data);
 		break;
 
 	case CA_CHALLENGING:
+		if ( MV_GetCurrentGameversion() == VERSION_UNDEF )
+			break;
+
 		// sending back the challenge
 		port = (int) Cvar_VariableValue ("net_qport");
 
 		Q_strncpyz( info, Cvar_InfoString( CVAR_USERINFO ), sizeof( info ) );
-		Info_SetValueForKey( info, "protocol", va("%i", PROTOCOL_VERSION ) );
+		Cvar_Set( "protocol", va("%i", MV_GetCurrentProtocol()) ); // As we don't have any UI support to select the version we set whatever version we played on last as protocol
+		Info_SetValueForKey( info, "protocol", va("%i", MV_GetCurrentProtocol() ) );
 		Info_SetValueForKey( info, "qport", va("%i", port ) );
 		Info_SetValueForKey( info, "challenge", va("%i", clc.challenge ) );
 
@@ -1650,6 +1678,10 @@ void CL_MotdPacket( netadr_t from ) {
 	}
 
 	challenge = Info_ValueForKey( info, "motd" );
+
+	// Ignore the update motd, if we already got the patch installed
+	if ( gotPatchInstalled && !Q_stricmp( challenge, "1.01 update for Jedi Academy is now available online. Please update your game." ) )
+		info = challenge = "";
 
 	Q_strncpyz( cls.updateInfoString, info, sizeof( cls.updateInfoString ) );
 	Cvar_Set( "cl_motdString", challenge );
@@ -3148,6 +3180,10 @@ void CL_Init( void ) {
 
 	Cvar_Set( "cl_running", "1" );
 
+	// If we don't have the patch installed set the protocol to 25 to show the protocol 25 serverlist on 1.00
+	if ( !gotPatchInstalled )
+		Cvar_Set("protocol", "25");
+
 	G2VertSpaceClient = new CMiniHeap (G2_VERT_SPACE_CLIENT_SIZE * 1024);
 
 	CL_GenerateQKey();
@@ -3346,13 +3382,13 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 	int		i, type;
 	char	info[MAX_INFO_STRING];
 	char	*infoString;
-	int		prot;
+	mvprotocol_t prot;
 
 	infoString = MSG_ReadString( msg );
 
 	// if this isn't the correct protocol version, ignore it
-	prot = atoi( Info_ValueForKey( infoString, "protocol" ) );
-	if ( prot != PROTOCOL_VERSION ) {
+	prot = (mvprotocol_t)atoi( Info_ValueForKey( infoString, "protocol" ) );
+	if ( prot != PROTOCOL25 && prot != PROTOCOL26 ) {
 		Com_DPrintf( "Different protocol info packet: %s\n", infoString );
 		return;
 	}
@@ -3360,6 +3396,23 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 	// if this is an MB2 server, ignore it
 	if (!Q_stricmp(Info_ValueForKey(infoString, "game"), "mbii")) {
 		return;
+
+	// multiprotocol support
+	if (cls.state == CA_CONNECTING && NET_CompareAdr(from, clc.serverAddress)) {
+		if ( MV_GetCurrentGameversion() == VERSION_UNDEF )
+		{
+			switch ( prot )
+			{
+				case PROTOCOL25:
+					MV_SetCurrentGameversion(VERSION_1_00);
+					break;
+				default:
+				case PROTOCOL26:
+					MV_SetCurrentGameversion(VERSION_1_01);
+					break;
+			}
+		}
+
 	}
 
 	// iterate servers waiting for ping response
@@ -3557,6 +3610,24 @@ void CL_ServerStatusResponse( netadr_t from, msg_t *msg ) {
 	}
 
 	s = MSG_ReadStringLine( msg );
+
+	// multiprotocol support
+	if (cls.state == CA_CONNECTING && NET_CompareAdr(from, clc.serverAddress))
+	{
+		mvprotocol_t prot;
+		prot = (mvprotocol_t)atoi(Info_ValueForKey(s, "protocol"));
+
+		switch ( prot )
+		{
+			case PROTOCOL25:
+				MV_SetCurrentGameversion(VERSION_1_00);
+				break;
+			case PROTOCOL26:
+				MV_SetCurrentGameversion(VERSION_1_01);
+				break;
+		}
+		return;
+	}
 
 	len = 0;
 	Com_sprintf(&serverStatus->string[len], sizeof(serverStatus->string)-len, "%s", s);

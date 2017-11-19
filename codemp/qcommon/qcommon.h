@@ -705,6 +705,7 @@ qboolean FS_ComparePaks( char *neededpaks, int len, qboolean dlstring );
 void FS_Rename( const char *from, const char *to );
 
 qboolean FS_WriteToTemporaryFile( const void *data, size_t dataLength, char **tempFileName );
+qboolean FS_AllPath_Base_FileExists(const char *file);
 
 
 /*
@@ -1059,3 +1060,22 @@ const void *PD_Load ( const char *name, size_t *size );
 uint32_t ConvertUTF8ToUTF32( char *utf8CurrentChar, char **utf8NextChar );
 
 #include "sys/sys_public.h"
+
+// multiprotocol support
+typedef enum {
+	PROTOCOL_UNDEF = 0,
+	PROTOCOL25 = 25,
+	PROTOCOL26 = 26,
+} mvprotocol_t;
+
+typedef enum {
+	VERSION_UNDEF = 0,
+	VERSION_1_00 = 1,
+	VERSION_1_01 = 2,
+} mvversion_t;
+
+extern qboolean disconnecting;
+extern qboolean gotPatchInstalled;
+void MV_SetCurrentGameversion(mvversion_t version);
+mvversion_t MV_GetCurrentGameversion();
+mvprotocol_t MV_GetCurrentProtocol();
