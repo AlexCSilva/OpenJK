@@ -1171,7 +1171,7 @@ qboolean FS_IsDemoExt(const char *filename, int namelen)
 	{
 		int protocol = atoi(ext_test + ARRAY_LEN(DEMO_EXTENSION));
 
-		if(protocol == PROTOCOL_VERSION)
+		if(protocol == MV_GetCurrentProtocol() )
 			return qtrue;
 	}
 

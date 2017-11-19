@@ -311,12 +311,12 @@ void CL_Record_f( void ) {
 	if ( Cmd_Argc() == 2 ) {
 		s = Cmd_Argv(1);
 		Q_strncpyz( demoName, s, sizeof( demoName ) );
-		Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", demoName, PROTOCOL_VERSION );
+		Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", demoName, MV_GetCurrentProtocol() );
 	} else {
 		// timestamp the file
 		CL_DemoFilename( demoName, sizeof( demoName ) );
 
-		Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", demoName, PROTOCOL_VERSION );
+		Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", demoName, MV_GetCurrentProtocol() );
 
 		if ( FS_FileExists( name ) ) {
 			Com_Printf( "Record: Couldn't create a file\n");
@@ -505,7 +505,7 @@ static void CL_CompleteDemoName( char *args, int argNum )
 	{
 		char demoExt[16];
 
-		Com_sprintf(demoExt, sizeof(demoExt), ".dm_%d", PROTOCOL_VERSION);
+		Com_sprintf(demoExt, sizeof(demoExt), ".dm_%d", MV_GetCurrentProtocol() );
 		Field_CompleteFilename( "demos", demoExt, qtrue, qtrue );
 	}
 }
@@ -536,11 +536,11 @@ void CL_PlayDemo_f( void ) {
 
 	CL_Disconnect( qtrue );
 
-	Com_sprintf(extension, sizeof(extension), ".dm_%d", PROTOCOL_VERSION);
+	Com_sprintf(extension, sizeof(extension), ".dm_%d", MV_GetCurrentProtocol() );
 	if ( !Q_stricmp( arg + strlen(arg) - strlen(extension), extension ) ) {
 		Com_sprintf (name, sizeof(name), "demos/%s", arg);
 	} else {
-		Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", arg, PROTOCOL_VERSION);
+		Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", arg, MV_GetCurrentProtocol() );
 	}
 
 	FS_FOpenFileRead( name, &clc.demofile, qtrue );
@@ -3396,6 +3396,8 @@ void CL_ServerInfoPacket( netadr_t from, msg_t *msg ) {
 	// if this is an MB2 server, ignore it
 	if (!Q_stricmp(Info_ValueForKey(infoString, "game"), "mbii")) {
 		return;
+
+	}
 
 	// multiprotocol support
 	if (cls.state == CA_CONNECTING && NET_CompareAdr(from, clc.serverAddress)) {

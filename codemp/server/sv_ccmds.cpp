@@ -1170,7 +1170,7 @@ static void SV_Status_f( void )
 	Q_StripColor( hostname );
 
 	Com_Printf( "hostname: %s^7\n", hostname );
-	Com_Printf( "version : %s %i\n", VERSION_STRING_DOTTED, PROTOCOL_VERSION );
+	Com_Printf( "version : %s %i\n", VERSION_STRING_DOTTED, MV_GetCurrentGameversion() );
 	Com_Printf( "game    : %s\n", FS_GetCurrentGameDir() );
 	Com_Printf( "udp/ip  : %s:%i os(%s) type(%s)\n", Cvar_VariableString( "net_ip" ), Cvar_VariableIntegerValue( "net_port" ), STATUS_OS, ded_table[com_dedicated->integer] );
 	Com_Printf( "map     : %s gametype(%i)\n", sv_mapname->string, sv_gametype->integer );
@@ -1637,7 +1637,7 @@ void SV_RecordDemo( client_t *cl, char *demoName ) {
 
 	// open the demo file
 	Q_strncpyz( cl->demo.demoName, demoName, sizeof( cl->demo.demoName ) );
-	Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", cl->demo.demoName, PROTOCOL_VERSION );
+	Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", cl->demo.demoName, MV_GetCurrentProtocol() );
 	Com_Printf( "recording to %s.\n", name );
 	cl->demo.demofile = FS_FOpenFileWrite( name );
 	if ( !cl->demo.demofile ) {
@@ -1890,12 +1890,12 @@ static void SV_Record_f( void ) {
 	if ( Cmd_Argc() >= 2 ) {
 		s = Cmd_Argv( 1 );
 		Q_strncpyz( demoName, s, sizeof( demoName ) );
-		Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", demoName, PROTOCOL_VERSION );
+		Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", demoName, MV_GetCurrentProtocol() );
 	} else {
 		// timestamp the file
 		SV_DemoFilename( demoName, sizeof( demoName ) );
 
-		Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", demoName, PROTOCOL_VERSION );
+		Com_sprintf (name, sizeof(name), "demos/%s.dm_%d", demoName, MV_GetCurrentProtocol() );
 
 		if ( FS_FileExists( name ) ) {
 			Com_Printf( "Record: Couldn't create a file\n");
