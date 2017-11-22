@@ -200,6 +200,12 @@ typedef struct fileInPack_s {
 	struct	fileInPack_s*	next;		// next file in the hash
 } fileInPack_t;
 
+enum {
+	PACKGVC_UNKNOWN = 0,
+	PACKGVC_1_00 = 1,
+	PACKGVC_1_01 = 2,
+};
+
 typedef struct pack_s {
 	char			pakPathname[MAX_OSPATH];	// c:\jediacademy\gamedata\base
 	char			pakFilename[MAX_OSPATH];	// c:\jediacademy\gamedata\base\assets0.pk3
@@ -213,6 +219,7 @@ typedef struct pack_s {
 	int				hashSize;					// hash table size (power of 2)
 	fileInPack_t*	*hashTable;					// hash table
 	fileInPack_t*	buildBuffer;				// buffer with the filenames etc.
+	int				gvc;
 } pack_t;
 
 typedef struct directory_s {
@@ -1129,6 +1136,38 @@ qboolean FS_FilenameCompare( const char *s1, const char *s2 ) {
 	} while (c1);
 
 	return qfalse;		// strings are equal
+}
+
+/*
+===========
+FS_PakReadFile
+
+Reads a file from specified pak_t and saves it's data in buffer
+===========
+*/
+int FS_PakReadFile(pack_t *pak, const char *filename, char *buffer, int bufferlen) {
+	int hash, len;
+	fileInPack_t *pakFile;
+
+	hash = FS_HashFileName(filename, pak->hashSize);
+	pakFile = pak->hashTable[hash];
+	if (pakFile) {
+		do {
+			// case and separator insensitive comparisons
+			if (!FS_FilenameCompare(pakFile->name, filename)) {
+				unzSetOffset(pak->handle, pakFile->pos);
+				unzOpenCurrentFile(pak->handle);
+				len = unzReadCurrentFile(pak->handle, buffer, bufferlen);
+				unzCloseCurrentFile(pak->handle);
+
+				return len;
+			}
+
+			pakFile = pakFile->next;
+		} while (pakFile != NULL);
+	}
+
+	return 0;
 }
 
 /*
@@ -2168,6 +2207,50 @@ static pack_t *FS_LoadZipFile( const char *zipfile, const char *basename )
 	Z_Free(fs_headerLongs);
 
 	pack->buildBuffer = buildBuffer;
+
+	// which versions does this pk3 support?
+	// filename prefixes
+	if (!Q_stricmpn(basename, "o100_", 5)) {
+		pack->gvc = PACKGVC_1_00;
+	}
+	else if (!Q_stricmpn(basename, "o101_", 5)) {
+		pack->gvc = PACKGVC_1_01;
+	}
+
+	// mv.info file in root directory of pk3 file
+	char cversion[128];
+	int cversionlen = FS_PakReadFile(pack, "mv.info", cversion, sizeof(cversion) - 1);
+	if (cversionlen) {
+		cversion[cversionlen] = '\0';
+		pack->gvc = PACKGVC_UNKNOWN; // mv.info file overwrites version prefixes
+
+		if (Q_stristr(cversion, "compatible 1.00")) {
+			pack->gvc |= PACKGVC_1_00;
+		}
+
+		if (Q_stristr(cversion, "compatible 1.01")) {
+			pack->gvc |= PACKGVC_1_01;
+		}
+
+		if (Q_stristr(cversion, "compatible all")) {
+			pack->gvc = PACKGVC_1_00 | PACKGVC_1_01;
+		}
+	}
+
+	// assets are hardcoded
+	if (!Q_stricmp(pack->pakBasename, "assets0")) {
+		pack->gvc = PACKGVC_1_00 | PACKGVC_1_01;
+	}
+	else if (!Q_stricmp(pack->pakBasename, "assets1")) {
+		pack->gvc = PACKGVC_1_00 | PACKGVC_1_01;
+	}
+	else if (!Q_stricmp(pack->pakBasename, "assets2")) {
+		pack->gvc = PACKGVC_1_00 | PACKGVC_1_01;
+	}
+	else if (!Q_stricmp(pack->pakBasename, "assets3")) {
+		pack->gvc = PACKGVC_1_01;
+	}
+
 	return pack;
 }
 
