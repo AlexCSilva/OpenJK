@@ -8,7 +8,7 @@
 		visible					0
 		fullScreen				0
 		outOfBoundsClick
-		rect					10 212 266 228
+		rect					10 212 266 248
 		focusColor				1 1 1 1
 		
 		// Overall window backdrop
@@ -17,7 +17,7 @@
 			name				background_pic
 			group				none
 			style				WINDOW_STYLE_SHADER
-			rect				0 0 266 228
+			rect				0 0 266 248
 			background			"gfx/menus/menu_box_ingame"
 			forecolor			1 1 1 1
 			visible				1
@@ -26,17 +26,17 @@
 		
 		itemDef
 		{
-			name				gunThirdPerson
+			name				hud
 			group				camera
 			type				ITEM_TYPE_MULTI
-			text				"Gun 3rd Person:"
-			cvar				cg_thirdPerson
+			text				"HUD:"
+			cvar				cg_draw2d
 			cvarFloatList
 			{
 				@MENUS_OFF 0
 				@MENUS_ON 1
 			}
-			rect				12 4 88 20
+			rect				6 4 54 20
 			textalign			ITEM_ALIGN_LEFT
 			textalignx			0
 			textaligny			0
@@ -52,17 +52,43 @@
 		
 		itemDef
 		{
-			name				hud
+			name				fpls
 			group				camera
 			type				ITEM_TYPE_MULTI
-			text				"HUD:"
-			cvar				cg_draw2d
+			text				"FPLS:"
+			cvar				cg_fpls
 			cvarFloatList
 			{
 				@MENUS_OFF 0
 				@MENUS_ON 1
 			}
-			rect				196 4 54 20
+			rect				67 4 59 20
+			textalign			ITEM_ALIGN_LEFT
+			textalignx			0
+			textaligny			0
+			font				4
+			textscale			1
+			forecolor			.615 .615 .956 1
+			visible				1
+			action
+			{
+				play			"sound/interface/button1.wav" ;
+			}
+		}
+		
+		itemDef
+		{
+			name				gunThirdPerson
+			group				camera
+			type				ITEM_TYPE_MULTI
+			text				"Gun 3rd Person:"
+			cvar				cg_thirdPerson
+			cvarFloatList
+			{
+				@MENUS_OFF 0
+				@MENUS_ON 1
+			}
+			rect				136 4 88 20
 			textalign			ITEM_ALIGN_LEFT
 			textalignx			0
 			textaligny			0
@@ -99,6 +125,67 @@
 			action
 			{
 				play			"sound/interface/button1.wav" ;
+			}
+		}
+		
+		itemDef
+		{
+			name				zoomText
+			group				camera
+			type				ITEM_TYPE_TEXT
+			text				"Zoom:"
+			cvar				cg_draw2d
+			rect				136 24 34 20
+			textalign			ITEM_ALIGN_LEFT
+			textalignx			0
+			textaligny			0
+			font				4
+			textscale			1
+			forecolor			1 1 1 1
+			visible				1
+		}
+		
+		itemDef
+		{
+			name				zoomEnable
+			group				camera
+			type				ITEM_TYPE_BUTTON
+			text				"Enable"
+			cvar				cg_draw2d
+			rect				180 24 36 20
+			textalign			ITEM_ALIGN_LEFT
+			textalignx			0
+			textaligny			0
+			font				4
+			textscale			1
+			forecolor			.615 .615 .956 1
+			visible				1
+			action
+			{
+				play			"sound/interface/button1.wav" ;
+				exec			"+zoom"
+			}
+		}
+		
+		itemDef
+		{
+			name				zoomDisable
+			group				camera
+			type				ITEM_TYPE_BUTTON
+			text				"Disable"
+			cvar				cg_draw2d
+			rect				226 24 34 20
+			textalign			ITEM_ALIGN_LEFT
+			textalignx			0
+			textaligny			0
+			font				4
+			textscale			1
+			forecolor			.615 .615 .956 1
+			visible				1
+			action
+			{
+				play			"sound/interface/button1.wav" ;
+				exec			"-zoom"
 			}
 		}
 		
@@ -151,7 +238,113 @@
 			action
 			{
 				play "sound/interface/button1.wav" ;
-				setcvar cg_fov "80.0000"
+				setcvar cg_fov "80.0"
+			}
+		}
+		
+		itemDef
+		{
+			name				gunFovSlider
+			group				camera
+			type				ITEM_TYPE_SLIDER
+			text				"Gun FOV:"
+			cvarfloat			"cg_fovViewmodel" 0 0 140
+			rect				10 64 156 20
+			textalign			ITEM_ALIGN_RIGHT
+			textalignx			52
+			font				4
+			textscale			1
+			forecolor			.615 .615 .956 1
+			visible				1
+			action
+			{
+				play			"sound/interface/button1.wav" ;
+			}
+		}
+		
+		itemDef 
+		{
+			name				gunFovField
+			group				camera
+			type				ITEM_TYPE_NUMERICFIELD
+			text				""
+			cvar				"cg_fovViewmodel"
+			rect				176 64 40 20
+			font 				4
+			textscale 			1
+			forecolor			.615 .615 .956 1
+			visible				1
+			action				{ play "sound/interface/button1.wav" ; }
+		}
+		
+		itemDef
+		{
+			name				gunFovReset
+ 			group				camera
+     		type				ITEM_TYPE_BUTTON
+			text				"Reset"
+			rect				226 64 30 20
+			font 				4
+			textscale 			1
+			forecolor			1 .682 0 1
+			visible				1
+			action
+			{
+				play "sound/interface/button1.wav" ;
+				setcvar cg_fovViewmodel "80.0"
+			}
+		}
+		
+		itemDef
+		{
+			name				zoomFovSlider
+			group				camera
+			type				ITEM_TYPE_SLIDER
+			text				"Zoom FOV:"
+			cvarfloat			"cg_zoomfov" 40 0 176
+			rect				10 84 156 20
+			textalign			ITEM_ALIGN_RIGHT
+			textalignx			52
+			font				4
+			textscale			1
+			forecolor			.615 .615 .956 1
+			visible				1
+			action
+			{
+				play			"sound/interface/button1.wav" ;
+			}
+		}
+		
+		itemDef 
+		{
+			name				zoomFovField
+			group				camera
+			type				ITEM_TYPE_NUMERICFIELD
+			text				""
+			cvar				"cg_zoomfov"
+			rect				176 84 40 20
+			font 				4
+			textscale 			1
+			forecolor			.615 .615 .956 1
+			visible				1
+			action				{ play "sound/interface/button1.wav" ; }
+		}
+		
+		itemDef
+		{
+			name				zoomFovReset
+ 			group				camera
+     		type				ITEM_TYPE_BUTTON
+			text				"Reset"
+			rect				226 84 30 20
+			font 				4
+			textscale 			1
+			forecolor			1 .682 0 1
+			visible				1
+			action
+			{
+				play "sound/interface/button1.wav" ;
+				setcvar cg_zoomfov "40.0"
 			}
 		}
 
@@ -204,7 +397,7 @@
 			action
 			{
 				play "sound/interface/button1.wav" ;
-				setcvar cg_thirdPersonRange "80.0000"
+				setcvar cg_thirdPersonRange "80.0"
 			}
 		}
 		
@@ -254,7 +447,7 @@
 			action
 			{
 				play "sound/interface/button1.wav" ;
-				setcvar cg_thirdPersonAngle "0.00000"
+				setcvar cg_thirdPersonAngle "0.0"
 			}
 		}
 		
@@ -304,7 +497,7 @@
 			action
 			{
 				play "sound/interface/button1.wav" ;
-				setcvar cg_thirdPersonPitchOffset "0.00000"
+				setcvar cg_thirdPersonPitchOffset "0.0"
 			}
 		}
 		
@@ -354,7 +547,7 @@
 			action
 			{
 				play "sound/interface/button1.wav" ;
-				setcvar cg_thirdPersonVertOffset "16.0000"
+				setcvar cg_thirdPersonVertOffset "16.0"
 			}
 		}
 		
@@ -404,7 +597,7 @@
 			action
 			{
 				play "sound/interface/button1.wav" ;
-				setcvar cg_thirdPersonHorzOffset "0.00000"
+				setcvar cg_thirdPersonHorzOffset "0.0"
 			}
 		}
 		
@@ -454,7 +647,56 @@
 			action
 			{
 				play "sound/interface/button1.wav" ;
-				setcvar cg_thirdPersonCameraDamp "1.00000"
+				setcvar cg_thirdPersonCameraDamp "0.3"
+			}
+		}
+		itemDef
+		{
+			name				dampSlider2
+			group				camera
+			type				ITEM_TYPE_SLIDER
+			text				"T. Damp:"
+			cvarfloat			"cg_thirdPersonTargetDamp" 1 0 1
+			rect				10 224 156 20
+			textalign			ITEM_ALIGN_RIGHT
+			textalignx			52
+			font				4
+			textscale			1
+			forecolor			.615 .615 .956 1
+			visible				1
+			action				{ play "sound/interface/button1.wav" ; }
+		}
+		
+		itemDef 
+		{
+			name				dampField2
+			group				camera
+			type				ITEM_TYPE_NUMERICFIELD
+			text				""
+			cvar				"cg_thirdPersonTargetDamp"
+			rect				176 224 40 20
+			font 				4
+			textscale 			1
+			forecolor			.615 .615 .956 1
+			visible				1
+			action				{ play "sound/interface/button1.wav" ; }
+		}
+		
+		itemDef
+		{
+			name				dampReset2
+ 			group				camera
+     		type				ITEM_TYPE_BUTTON
+			text				"Reset"
+			rect				226 224 30 20
+			font 				4
+			textscale 			1
+			forecolor			1 .682 0 1
+			visible				1
+			action
+			{
+				play "sound/interface/button1.wav" ;
+				setcvar cg_thirdPersonTargetDamp "0.5"
 			}
 		}
 	}

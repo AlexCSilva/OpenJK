@@ -57,6 +57,8 @@ cvar_t	*com_optvehtrace;
 cvar_t	*com_G2Report;
 #endif
 
+cvar_t *com_renderfps;
+
 cvar_t	*com_version;
 cvar_t	*com_buildScript;	// for automated data building scripts
 cvar_t	*com_bootlogo;
@@ -68,6 +70,8 @@ cvar_t  *com_homepath;
 cvar_t	*com_ansiColor = NULL;
 #endif
 cvar_t	*com_busyWait;
+
+cvar_t	*cl_commandsize;
 
 cvar_t *com_affinity;
 
@@ -1232,6 +1236,9 @@ void Com_Init( char *commandLine ) {
 		com_sv_running = Cvar_Get ("sv_running", "0", CVAR_ROM, "Is a server running?" );
 		com_cl_running = Cvar_Get ("cl_running", "0", CVAR_ROM, "Is the client running?" );
 		com_buildScript = Cvar_Get( "com_buildScript", "0", 0 );
+
+		com_renderfps = Cvar_Get("com_renderfps", "0", CVAR_ARCHIVE_ND);
+		cl_commandsize = Cvar_Get("cl_commandsize", "64", CVAR_ARCHIVE_ND);//Loda - FPS UNLOCK ENGINE
 #ifndef _WIN32
 		com_ansiColor = Cvar_Get( "com_ansiColor", "0", CVAR_ARCHIVE_ND );
 #endif
@@ -1243,7 +1250,9 @@ void Com_Init( char *commandLine ) {
 		com_affinity = Cvar_Get( "com_affinity", "0", CVAR_ARCHIVE_ND );
 		com_busyWait = Cvar_Get( "com_busyWait", "0", CVAR_ARCHIVE_ND );
 
-		com_bootlogo = Cvar_Get( "com_bootlogo", "1", CVAR_ARCHIVE_ND, "Show intro movies" );
+		cl_commandsize = Cvar_Get("cl_commandsize", "64", CVAR_ARCHIVE);
+
+		com_bootlogo = Cvar_Get( "com_bootlogo", "0", CVAR_ARCHIVE_ND, "Show intro movies" );
 
 		s = va("%s %s %s", (MV_GetCurrentGameversion() == VERSION_1_00 ? JK_VERSION_OLD_1_00 : JK_VERSION_OLD), PLATFORM_STRING, SOURCE_DATE );
 		com_version = Cvar_Get ("version", s, CVAR_ROM | CVAR_SERVERINFO );
