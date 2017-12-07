@@ -491,8 +491,7 @@ float CL_KeyState( kbutton_t *key ) {
 		} else {
 			msec += com_frameTime - key->downtime;
 		}
-		if (!cl_idrive->integer)
-			key->downtime = com_frameTime;//Loda - Not sure what the fuck this is doing here, downtime is supposed to store time of when the key was initially pressed, not the most recent time its been held down..
+		key->downtime = com_frameTime;
 	}
 
 #if 0
@@ -897,81 +896,26 @@ void CL_KeyMove( usercmd_t *cmd ) {
 	forward = 0;
 	side = 0;
 	up = 0;
-
-	if (cl_idrive->integer) {
-		float s1, s2;
-
-		if (in_strafe.active) {
-			s1 = CL_KeyState(&in_right);
-			s2 = CL_KeyState(&in_left);
-			if (s1 && s2) {
-				if (in_right.downtime > in_left.downtime)
-					s2 = 0;
-				if (in_right.downtime < in_left.downtime)
-					s1 = 0;
-			}
-			side += movespeed * s1;
-			side -= movespeed * s2;
-		}
-
-		s1 = CL_KeyState(&in_moveright);
-		s2 = CL_KeyState(&in_moveleft);
-		if (s1 && s2) {
-			if (in_moveright.downtime > in_moveleft.downtime)
-				s2 = 0;
-			if (in_moveright.downtime < in_moveleft.downtime)
-				s1 = 0;
-		}
-		side += movespeed * s1;
-		side -= movespeed * s2;
-
-		s1 = CL_KeyState(&in_up);
-		s2 = CL_KeyState(&in_down);
-		if (s1 && s2) {
-			if (in_up.downtime > in_down.downtime)
-				s2 = 0;
-			if (in_up.downtime < in_down.downtime)
-				s1 = 0;
-		}
-		up += movespeed * s1;
-		up -= movespeed * s2;
-
-		s1 = CL_KeyState(&in_forward);
-		s2 = CL_KeyState(&in_back);
-		if (s1 && s2) {
-			if (in_forward.downtime > in_back.downtime)
-				s2 = 0;
-			if (in_forward.downtime < in_back.downtime)
-				s1 = 0;
-		}
-		forward += movespeed * s1;
-		forward -= movespeed * s2;
-
-		cmd->forwardmove = ClampChar(forward);
-		cmd->rightmove = ClampChar(side);
-		cmd->upmove = ClampChar(up);
+	if ( in_strafe.active ) {
+		side += movespeed * CL_KeyState (&in_right);
+		side -= movespeed * CL_KeyState (&in_left);
 	}
-	else {
-		if (in_strafe.active) {
-			side += movespeed * CL_KeyState(&in_right);
-			side -= movespeed * CL_KeyState(&in_left);
-		}
 
-		side += movespeed * CL_KeyState(&in_moveright);
-		side -= movespeed * CL_KeyState(&in_moveleft);
+	side += movespeed * CL_KeyState (&in_moveright);
+	side -= movespeed * CL_KeyState (&in_moveleft);
 
-		up += movespeed * CL_KeyState(&in_up);
-		up -= movespeed * CL_KeyState(&in_down);
 
-		forward += movespeed * CL_KeyState(&in_forward);
-		forward -= movespeed * CL_KeyState(&in_back);
+	up += movespeed * CL_KeyState (&in_up);
+	up -= movespeed * CL_KeyState (&in_down);
 
-		cmd->forwardmove = ClampChar(forward);
-		cmd->rightmove = ClampChar(side);
-		cmd->upmove = ClampChar(up);
+	forward += movespeed * CL_KeyState (&in_forward);
+	forward -= movespeed * CL_KeyState (&in_back);
 
-	}
+	cmd->forwardmove = ClampChar( forward );
+	cmd->rightmove = ClampChar( side );
+	cmd->upmove = ClampChar( up );
 }
+
 /*
 =================
 CL_MouseEvent
@@ -1456,8 +1400,6 @@ Create a new usercmd_t structure for this frame
 void CL_CreateNewCommands( void ) {
 	int			cmdNum;
 
-	const int REAL_CMD_MASK = (cl_commandsize->integer >= 4 && cl_commandsize->integer <= 512) ? (cl_commandsize->integer - 1) : (CMD_MASK);//Loda - FPS UNLOCK ENGINE
-
 	// no need to create usercmds until we have a gamestate
 	if ( cls.state < CA_PRIMED )
 		return;
@@ -1478,7 +1420,7 @@ void CL_CreateNewCommands( void ) {
 
 	// generate a command for this frame
 	cl.cmdNumber++;
-	cmdNum = cl.cmdNumber & REAL_CMD_MASK;
+	cmdNum = cl.cmdNumber & CMD_MASK;
 	cl.cmds[cmdNum] = CL_CreateCmd();
 }
 
@@ -1620,8 +1562,6 @@ void CL_WritePacket( void ) {
 		Com_Printf("MAX_PACKET_USERCMDS\n");
 	}
 	if ( count >= 1 ) {
-		const int REAL_CMD_MASK = (cl_commandsize->integer >= 4 && cl_commandsize->integer <= 512) ? (cl_commandsize->integer - 1) : (CMD_MASK);
-
 		if ( cl_showSend->integer ) {
 			Com_Printf( "(%i)", count );
 		}
@@ -1647,7 +1587,7 @@ void CL_WritePacket( void ) {
 
 		// write all the commands, including the predicted command
 		for ( i = 0 ; i < count ; i++ ) {
-			j = (cl.cmdNumber - count + i + 1) & REAL_CMD_MASK;
+			j = (cl.cmdNumber - count + i + 1) & CMD_MASK;
 			cmd = &cl.cmds[j];
 			MSG_WriteDeltaUsercmdKey (&buf, key, oldcmd, cmd);
 			oldcmd = cmd;
@@ -1839,8 +1779,6 @@ void CL_InitInput( void ) {
 
 	cl_nodelta = Cvar_Get ("cl_nodelta", "0", 0);
 	cl_debugMove = Cvar_Get ("cl_debugMove", "0", 0);
-
-	cl_idrive = Cvar_Get("cl_idrive", "0", 0);
 }
 
 /*

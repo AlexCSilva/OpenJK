@@ -119,8 +119,6 @@ cvar_t *cl_afkTimeUnfocused;
 
 cvar_t *cl_logChat;
 
-cvar_t	*cl_idrive;
-
 int		cl_unfocusedTime;
 
 vec3_t cl_windVec;
@@ -1278,18 +1276,6 @@ void CL_Vid_Restart_f( void ) {
 
 /*
 =================
-CL_Fs_Restart_f
-
-Restart the filesystem
-=================
-*/
-
-void CL_Fs_Restart_f( void ) {
-	FS_Restart( clc.checksumFeed );
-}
-
-/*
-=================
 CL_Snd_Restart_f
 
 Restart the sound subsystem
@@ -2230,19 +2216,12 @@ static unsigned int frameCount;
 static float avgFrametime=0.0;
 extern void SE_CheckForLanguageUpdates(void);
 void CL_Frame ( int msec ) {
-	qboolean render = qfalse;
-
 	qboolean takeVideoFrame = qfalse;
 
 	CL_CheckCvarUpdate();
 
 	if ( !com_cl_running->integer ) {
 		return;
-	}
-
-	if ( (com_renderfps->integer <= 0) || ((cls.realtime >= cls.lastDrawTime + (1000 / com_renderfps->integer))) ) {
-		render = qtrue;
-		cls.lastDrawTime = cls.realtime;	
 	}
 
 	SE_CheckForLanguageUpdates();	// will take zero time to execute unless language changes, then will reload strings.
@@ -2308,13 +2287,11 @@ void CL_Frame ( int msec ) {
 	// decide on the serverTime to render
 	CL_SetCGameTime();
 
-	if (render) {
-		// update the screen
-		SCR_UpdateScreen();
+	// update the screen
+	SCR_UpdateScreen();
 
-		// update audio
-		S_Update();
-	}
+	// update audio
+	S_Update();
 
 	// advance local effects for next frame
 	SCR_RunCinematic();
@@ -2400,7 +2377,6 @@ void CL_InitRenderer( void ) {
 
 	cls.whiteShader = re->RegisterShader( "white" );
 	cls.consoleShader = re->RegisterShader( "console" );
-	cls.ratioFix = (float)(SCREEN_WIDTH * cls.glconfig.vidHeight) / (float)(SCREEN_HEIGHT * cls.glconfig.vidWidth);
 	g_console_field_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
 	g_consoleField.widthInChars = g_console_field_width;
 }
@@ -2469,7 +2445,7 @@ static IHeapAllocator *GetG2VertSpaceServer( void ) {
 	return G2VertSpaceServer;
 }
 
-#define DEFAULT_RENDER_LIBRARY "rd-eternaljk"
+#define DEFAULT_RENDER_LIBRARY "rd-vanilla"
 
 void CL_InitRef( void ) {
 	static refimport_t ri;
@@ -3153,7 +3129,7 @@ void CL_Init( void ) {
 	// cgame might not be initialized before menu is used
 	Cvar_Get ("cg_viewsize", "100", CVAR_ARCHIVE_ND );
 
-	cl_coloredTextShadows = Cvar_Get("cl_coloredTextShadows", "0", CVAR_ARCHIVE, "Toggled colored text shadows");
+	cl_coloredTextShadows = Cvar_Get("cl_coloredTextShadows", "0", CVAR_ARCHIVE);
 
 	cl_afkTime = Cvar_Get("cl_afkTime", "5", CVAR_ARCHIVE, "Minutes to autorename to afk, 0 to disable");
 	cl_afkTimeUnfocused = Cvar_Get("cl_afkTimeUnfocused", "1", CVAR_ARCHIVE, "Minutes to autorename to afk while unfocused/minimized");
@@ -3179,7 +3155,6 @@ void CL_Init( void ) {
 	Cmd_AddCommand ("clientinfo", CL_Clientinfo_f, "Prints the userinfo variables" );
 	Cmd_AddCommand ("snd_restart", CL_Snd_Restart_f, "Restart sound" );
 	Cmd_AddCommand ("vid_restart", CL_Vid_Restart_f, "Restart the renderer - or change the resolution" );
-	Cmd_AddCommand ("fs_restart", CL_Fs_Restart_f, "Restart the filesystem" );
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from current server" );
 	Cmd_AddCommand ("cinematic", CL_PlayCinematic_f, "Play a cinematic video" );
 	Cmd_AddCommand ("connect", CL_Connect_f, "Connect to a server" );
@@ -3258,7 +3233,6 @@ void CL_Shutdown( void ) {
 	Cmd_RemoveCommand ("clientinfo");
 	Cmd_RemoveCommand ("snd_restart");
 	Cmd_RemoveCommand ("vid_restart");
-	Cmd_RemoveCommand ("fs_restart");
 	Cmd_RemoveCommand ("disconnect");
 	Cmd_RemoveCommand ("record");
 	Cmd_RemoveCommand ("demo");
@@ -3327,7 +3301,7 @@ static void CL_SetServerInfo(serverInfo_t *server, const char *info, int ping) {
 	if (server) {
 		if (info) {
 			char * filteredHostName = Info_ValueForKey(info, "hostname");
-			if (Q_stricmp(filteredHostName, "")) { Q_strstrip(filteredHostName, "Â€Â¬", NULL); }
+			if (Q_stricmp(filteredHostName, "")) { Q_strstrip(filteredHostName, "€¬", NULL); }
 			//server->clients = atoi(Info_ValueForKey(info, "clients"));
 			Q_strncpyz(server->hostName, filteredHostName, MAX_NAME_LENGTH);
 			Q_strncpyz(server->mapName, Info_ValueForKey(info, "mapname"), MAX_NAME_LENGTH);
@@ -3828,12 +3802,12 @@ void CL_GlobalServers_f( void ) {
 		return;
 	}
 
-	Com_sprintf( command, sizeof(command), "sv_master%d", masterNum );
+	Com_sprintf( command, sizeof(command), "sv_master%d", masterNum + 1 );
 	masteraddress = Cvar_VariableString( command );
 
 	if ( !*masteraddress )
 	{
-		Com_Printf( "CL_GlobalServers_f: Error: No master server address given for %s.\n" ,command );
+		Com_Printf( "CL_GlobalServers_f: Error: No master server address given.\n" );
 		return;
 	}
 

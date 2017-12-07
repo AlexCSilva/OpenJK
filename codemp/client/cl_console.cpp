@@ -81,11 +81,10 @@ Con_MessageMode_f
 ================
 */
 void Con_MessageMode_f (void) {	//yell
-	float ratio = (cls.ratioFix ? cls.ratioFix : 1.0f);
 	chat_playerNum = -1;
 	chat_team = qfalse;
 	Field_Clear( &chatField );
-	chatField.widthInChars = 30 / ratio;
+	chatField.widthInChars = 30;
 
 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
 }
@@ -96,11 +95,10 @@ Con_MessageMode2_f
 ================
 */
 void Con_MessageMode2_f (void) {	//team chat
-	float ratio = (cls.ratioFix ? cls.ratioFix : 1.0f);
 	chat_playerNum = -1;
 	chat_team = qtrue;
 	Field_Clear( &chatField );
-	chatField.widthInChars = 25 / ratio;
+	chatField.widthInChars = 25;
 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
 }
 
@@ -111,7 +109,6 @@ Con_MessageMode3_f
 */
 void Con_MessageMode3_f (void)
 {		//target chat
-	float ratio = (cls.ratioFix ? cls.ratioFix : 1.0f);
 	if (!cls.cgameStarted)
 	{
 		assert(!"null cgvm");
@@ -125,7 +122,7 @@ void Con_MessageMode3_f (void)
 	}
 	chat_team = qfalse;
 	Field_Clear( &chatField );
-	chatField.widthInChars = 30 / ratio;
+	chatField.widthInChars = 30;
 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
 }
 
@@ -136,7 +133,6 @@ Con_MessageMode4_f
 */
 void Con_MessageMode4_f (void)
 {	//attacker
-	float ratio = (cls.ratioFix ? cls.ratioFix : 1.0f);
 	if (!cls.cgameStarted)
 	{
 		assert(!"null cgvm");
@@ -150,7 +146,7 @@ void Con_MessageMode4_f (void)
 	}
 	chat_team = qfalse;
 	Field_Clear( &chatField );
-	chatField.widthInChars = 30 / ratio;
+	chatField.widthInChars = 30;
 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
 }
 
@@ -623,13 +619,12 @@ void CL_ConsolePrint( const char *txt) {
 			txtc = va("%s", txt);
 			Q_StripColor(txtc);
 			CL_LogPrintf(cls.log.chat, va("%s", txtc));
-			if (!Q_strrchr(txtc, ':') == '0') { // i feel sick just looking at this
-				if (con_notifyname->string != "0" && Q_stristr(Q_strrchr(txtc, ':'), con_notifyname->string)) {
-					stampColor = COLOR_CYAN;
+			
+			if (con_notifyname->string != "0" && Q_stristr(Q_strrchr(txtc, ':'), con_notifyname->string)) {
+				stampColor = COLOR_CYAN;
 #ifdef _WIN32
-					con_alert = qtrue;
+				con_alert = qtrue;
 #endif
-				}
 			}
 			else stampColor = COLOR_WHITE;
 		}
@@ -766,7 +761,7 @@ void Con_DrawInput (void) {
 
 
 
-float chatColour[4] = { 1.0f, 1.0f, 1.0f, 1.0f }; // For DrawStringExt2
+
 /*
 ================
 Con_DrawNotify
@@ -871,14 +866,16 @@ void Con_DrawNotify (void)
 		if (chat_team)
 		{
 			chattext = SE_GetString("MP_SVGAME", "SAY_TEAM");
+			SCR_DrawBigString (8, v, chattext, 1.0f, qfalse );
+			skip = strlen(chattext)+1;
 		}
 		else
 		{
 			chattext = SE_GetString("MP_SVGAME", "SAY");
+			SCR_DrawBigString (8, v, chattext, 1.0f, qfalse );
+			skip = strlen(chattext)+1;
 		}
 
-		SCR_DrawStringExt2(8 * cls.ratioFix, v, BIGCHAR_WIDTH*cls.ratioFix, BIGCHAR_HEIGHT, chattext, chatColour, qfalse, qfalse);
-		skip = strlen(chattext) + 1;
 		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v,
 			SCREEN_WIDTH - ( skip + 1 ) * BIGCHAR_WIDTH, qtrue, qtrue );
 

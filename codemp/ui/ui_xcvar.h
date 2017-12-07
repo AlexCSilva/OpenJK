@@ -34,7 +34,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #endif
 
 XCVAR_DEF( capturelimit,					"0",					NULL,				CVAR_ARCHIVE|CVAR_NORESTART|CVAR_SERVERINFO ) // fixme init'd to 8 in game module
-XCVAR_DEF( cl_ratioFix,						"1",					UI_Set2DRatio,		CVAR_ARCHIVE ) //cvar name is shared in jaPRO cgame
 XCVAR_DEF( cg_drawCrosshair,				"1",					NULL,				CVAR_ARCHIVE )
 XCVAR_DEF( cg_drawCrosshairNames,			"1",					NULL,				CVAR_ARCHIVE )
 XCVAR_DEF( cg_marks,						"1",					NULL,				CVAR_ARCHIVE )
@@ -96,7 +95,7 @@ XCVAR_DEF( ui_lastServerRefresh_6,			"",						NULL,				CVAR_ARCHIVE|CVAR_INTERNA
 XCVAR_DEF( ui_mapIndex,						"0",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_menuFilesMP,					"ui/jampmenus.txt",		NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_netGametype,					"0",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
-XCVAR_DEF( ui_netSource,					"1",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
+XCVAR_DEF( ui_netSource,					"0",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_opponentName,					DEFAULT_BLUETEAM_NAME,	NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_rankChange,					"0",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_recordSPDemo,					"0",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
@@ -145,11 +144,6 @@ XCVAR_DEF( ui_team_friendly,				"1",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_team_timelimit,				"20",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_duel_fraglimit,				"1",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_duel_timelimit,				"3",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
-XCVAR_DEF( ui_teamSize,						"3",					NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
-XCVAR_DEF( ui_sha_r,						"0",					CVU_StrafeHelper,	CVAR_ARCHIVE|CVAR_INTERNAL )
-XCVAR_DEF( ui_sha_g,						"255",					CVU_StrafeHelper,	CVAR_ARCHIVE|CVAR_INTERNAL )
-XCVAR_DEF( ui_sha_b,						"0",					CVU_StrafeHelper,	CVAR_ARCHIVE|CVAR_INTERNAL )
-XCVAR_DEF( ui_sha_a,						"200",					CVU_StrafeHelper,	CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_username,						"",						NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 XCVAR_DEF( ui_password,						"",						NULL,				CVAR_ARCHIVE|CVAR_INTERNAL )
 

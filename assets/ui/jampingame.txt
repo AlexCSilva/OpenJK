@@ -12,7 +12,6 @@
 	loadMenu { "ui/jamp/ingame_callvote.menu"		}
 	loadMenu { "ui/jamp/ingame_controls.menu"		}
 	loadMenu { "ui/jamp/ingame_join.menu"			}
-	loadMenu { "ui/jamp/ingame_join_japro.menu"		}
 
 	loadMenu { "ui/jamp/ingame_leave.menu"			}
  	loadMenu { "ui/jamp/ingame.menu"			}
@@ -34,10 +33,7 @@
 	loadMenu { "ui/jamp/ingame_objectives.menu"		}
 	
 	loadMenu { "ui/jamp/ingame_server.menu"			}
-	loadMenu { "ui/jamp/ingame_race.menu"			}
 	loadMenu { "ui/jamp/ingame_camera.menu"			}
-	loadMenu { "ui/jamp/ingame_strafehelper.menu"		}
-	loadMenu { "ui/jamp/ingame_spectator.menu"		}
 	loadMenu { "ui/jamp/ingame_account.menu"		}
 }
 
