@@ -118,7 +118,7 @@
 		itemDef 
 		{
 			name				team
-			text				Race
+			text				@MENUS_AUTO_TEAM
 			type				1
 			style				2	
 			rect				2 4 124 30   
