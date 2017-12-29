@@ -3834,7 +3834,7 @@ void CL_GlobalServers_f( void ) {
 
 	if ( !*masteraddress )
 	{
-		Com_Printf( "CL_GlobalServers_f: Error: No master server address given for %s.\n" ,command );
+		Com_Printf( "CL_GlobalServers_f: Error: No master server address given for %s.\n", command );
 		return;
 	}
 

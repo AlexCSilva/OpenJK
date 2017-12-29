@@ -271,7 +271,7 @@ extern	cvar_t	*sv_filterCommands;
 extern	cvar_t	*sv_autoDemo;
 extern	cvar_t	*sv_autoDemoBots;
 extern	cvar_t	*sv_autoDemoMaxMaps;
-extern	cvar_t	*sv_legacyFixForceSelect;
+extern	cvar_t	*sv_legacyFixes;
 extern	cvar_t	*sv_banFile;
 extern	cvar_t	*mv_serverversion;
 

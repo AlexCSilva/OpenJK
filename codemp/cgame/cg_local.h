@@ -73,8 +73,6 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #define STAT_MINUS			10	// num frame for '-' stats digit
 
 #define	ICON_SIZE			48
-#define	CHAR_WIDTH			32
-#define	CHAR_HEIGHT			48
 #define	TEXT_ICON_SPACE		4
 
 // very large characters
@@ -1727,6 +1725,7 @@ void CG_NextInventory_f(void);
 void CG_PrevInventory_f(void);
 void CG_NextForcePower_f(void);
 void CG_PrevForcePower_f(void);
+void CG_Set2DRatio(void);
 
 //
 // cg_view.c
