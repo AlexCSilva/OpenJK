@@ -1655,12 +1655,7 @@ void SV_RecordDemo( client_t *cl, char *demoName ) {
 
 	// open the demo file
 	Q_strncpyz( cl->demo.demoName, demoName, sizeof( cl->demo.demoName ) );
-<<<<<<< HEAD
-	Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", cl->demo.demoName, MV_GetCurrentProtocol() );
-=======
-	Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", cl->demo.demoName, PROTOCOL_VERSION ); //Should use DEMO_EXTENSION
-
->>>>>>> 77d8c46887a48609c39e0a70652acecf1ccc1d9d
+	Com_sprintf( name, sizeof( name ), "demos/%s.dm_%d", cl->demo.demoName, MV_GetCurrentProtocol()); //Should use DEMO_EXTENSION
 	Com_Printf( "recording to %s.\n", name );
 	cl->demo.demofile = FS_FOpenFileWrite( name );
 	if ( !cl->demo.demofile ) {
