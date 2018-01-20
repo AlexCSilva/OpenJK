@@ -383,7 +383,6 @@ extern	cvar_t	*cl_shownet;
 extern	cvar_t	*cl_showSend;
 extern	cvar_t	*cl_timeNudge;
 extern	cvar_t	*cl_showTimeDelta;
-extern	cvar_t	*cl_freezeDemo;
 
 extern	cvar_t	*cl_yawspeed;
 extern	cvar_t	*cl_pitchspeed;
@@ -405,8 +404,8 @@ extern	cvar_t	*m_forward;
 extern	cvar_t	*m_side;
 extern	cvar_t	*m_filter;
 
-extern	cvar_t	*cl_idrive;
-extern	cvar_t	*cl_commandsize;
+extern	cvar_t	*cl_idrive;//JAPRO ENGINE
+extern	cvar_t	*cl_commandsize;//JAPRO ENGINE
 
 extern	cvar_t	*cl_timedemo;
 extern	cvar_t	*cl_aviFrameRate;

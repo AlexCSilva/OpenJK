@@ -15,24 +15,22 @@ case "${host}" in
 		export CXX=${host}-g++
 		set -- \
 			-D CMAKE_TOOLCHAIN_FILE=$(pwd)/CMakeModules/Toolchains/${host}.cmake \
+			-D BuildMPCGame=OFF \
 			"$@"
 		;;
 
 	(i?86-linux-gnu)
 		set -- \
 			-D CMAKE_TOOLCHAIN_FILE=$(pwd)/CMakeModules/Toolchains/linux-i686.cmake \
-			-D BuildMPDed=OFF \
 			"$@"
 		;;
 	(macosx-universal-clang)
 		set -- \
-			-D BuildMPDed=OFF \
 			"$@"
 		;;
 	(native)
 		if [ -n "${deploy}" ]; then
 			set -- \
-				-D BuildMPDed=OFF \
 				"$@"
 		fi
 		;;
@@ -59,12 +57,7 @@ fi
 
 case "${host}" in
 	(macosx-universal-clang)
-		( cd $(pwd)/assets && \
-			zip -r japro3ui-assets.pk3 * && \
-			mv japro3ui-assets.pk3 ../build/DESTDIR/prefix/JediAcademy/openjk.x86_64.app/Contents/MacOS/japro/ && \
-			cd ../build/DESTDIR/prefix/JediAcademy/openjk.x86_64.app/Contents/MacOS/eternaljk/ && \
-			wget http://upsgaming.com/files/japro3.pk3 && \
-			cd ../../../ && \
+		( cd $(pwd)/build/DESTDIR/prefix/JediAcademy/eternaljk.x86_64.app/ && \
 			tar czvf eternaljk-macos-"${arch}".tar.gz * && \
 			mv eternaljk-macos-"${arch}".tar.gz /Users/travis/build/eternalcodes/EternalJK/ && \
 			cd ../../../ && \
@@ -72,15 +65,24 @@ case "${host}" in
 		;;
 	(i?86-linux-gnu|native)
 		if [ -n "${deploy}" ]; then
-			( cd $(pwd)/assets && \
-				zip -r japro3ui-assets.pk3 * && \
-				mv japro3ui-assets.pk3 ../build/DESTDIR/prefix/JediAcademy/eternaljk/ && \
-				cd ../build/DESTDIR/prefix/JediAcademy/eternaljk && \
-				wget http://upsgaming.com/files/japro3.pk3 && \
-				cd ../ && \
+			( cd $(pwd)/build/DESTDIR/prefix/JediAcademy/ && \
 				tar czvf eternaljk-linux-"${arch}".tar.gz * && \
 				mv eternaljk-linux-"${arch}".tar.gz /home/travis/build/eternalcodes/EternalJK/ && \
 				cd ../../ && \
+				find . -ls )
+		else
+			( cd $(pwd)/build/DESTDIR && find . -ls )
+		fi
+		;;
+	(i686-w64-mingw32)
+		if [ -n "${deploy}" ]; then
+			( cd $(pwd)/build/DESTDIR/prefix/JediAcademy/ && \
+				zip -r eternaljk-win32-portable.zip * && \
+				mv eternaljk-win32-portable.zip /home/travis/build/eternalcodes/EternalJK/ && \
+				cd eternaljk/ && \
+				zip -r ejk-japro-pk3only.zip * && \
+				mv ejk-japro-pk3only.zip /home/travis/build/eternalcodes/EternalJK/ && \
+				cd ../../../ && \
 				find . -ls )
 		else
 			( cd $(pwd)/build/DESTDIR && find . -ls )

@@ -88,7 +88,7 @@ bool CParticle::Cull(void)
 	VectorSubtract( mOrigin1, theFxHelper.refdef->vieworg, dir );
 
 	// Check if it's behind the viewer
-	if ( (DotProduct( theFxHelper.refdef->viewaxis[0], dir )) < 0) // cg.cosHalfFOV * (len - mRadius) )
+	if ( mRefEnt.reType != RT_LINE && (DotProduct( theFxHelper.refdef->viewaxis[0], dir )) < 0) // cg.cosHalfFOV * (len - mRadius) )
 	{
 		return true;
 	}
@@ -225,7 +225,7 @@ bool CParticle::UpdateOrigin(void)
 	new_origin[2] = mOrigin1[2] + (theFxHelper.mRealTime * mVel[2]);// + (theFxHelper.mHalfRealTimeSq * mVel[2]);
 
 	// Only perform physics if this object is tagged to do so
-	if ( (mFlags & FX_APPLY_PHYSICS) && !(mFlags & FX_PLAYER_VIEW) )
+	if ((mFlags & FX_APPLY_PHYSICS) && !(mFlags & FX_PLAYER_VIEW))
 	{
 		if ( mFlags & FX_EXPENSIVE_PHYSICS )
 		{

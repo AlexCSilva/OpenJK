@@ -56,7 +56,6 @@ cvar_t	*cl_maxpackets;
 cvar_t	*cl_packetdup;
 cvar_t	*cl_timeNudge;
 cvar_t	*cl_showTimeDelta;
-cvar_t	*cl_freezeDemo;
 
 cvar_t	*cl_shownet;
 cvar_t	*cl_showSend;
@@ -99,6 +98,8 @@ cvar_t	*cl_framerate;
 cvar_t	*cl_enableGuid;
 cvar_t	*cl_guidServerUniq;
 
+cvar_t	*cl_idrive; //JAPRO ENGINE
+
 cvar_t	*cl_autolodscale;
 
 cvar_t	*cl_consoleKeys;
@@ -118,8 +119,6 @@ cvar_t *cl_afkTime;
 cvar_t *cl_afkTimeUnfocused;
 
 cvar_t *cl_logChat;
-
-cvar_t	*cl_idrive;
 
 int		cl_unfocusedTime;
 
@@ -2131,7 +2130,7 @@ void CL_CheckTimeout( void ) {
 	//
 	if ( ( !CL_CheckPaused() || !sv_paused->integer )
 		&& cls.state >= CA_CONNECTED && cls.state != CA_CINEMATIC
-	    && cls.realtime - clc.lastPacketTime > cl_timeout->value*1000) {
+	    && cls.realtime - clc.lastPacketTime > cl_timeout->integer*1000) {
 		if (++cl.timeoutcount > 5) {	// timeoutcount saves debugger
 			const char *psTimedOut = SE_GetString("MP_SVGAME_SERVER_CONNECTION_TIMED_OUT");
 			Com_Printf ("\n%s\n",psTimedOut);
@@ -2231,7 +2230,6 @@ static float avgFrametime=0.0;
 extern void SE_CheckForLanguageUpdates(void);
 void CL_Frame ( int msec ) {
 	qboolean render = qfalse;
-
 	qboolean takeVideoFrame = qfalse;
 
 	CL_CheckCvarUpdate();
@@ -2240,9 +2238,9 @@ void CL_Frame ( int msec ) {
 		return;
 	}
 
-	if ( (com_renderfps->integer <= 0) || ((cls.realtime >= cls.lastDrawTime + (1000 / com_renderfps->integer))) ) {
+	if ((com_renderfps->integer <= 0) || ((cls.realtime >= cls.lastDrawTime + (1000 / com_renderfps->integer)))) {
 		render = qtrue;
-		cls.lastDrawTime = cls.realtime;	
+		cls.lastDrawTime = cls.realtime;
 	}
 
 	SE_CheckForLanguageUpdates();	// will take zero time to execute unless language changes, then will reload strings.
@@ -2297,7 +2295,9 @@ void CL_Frame ( int msec ) {
 
 	// if we haven't gotten a packet in a long time,
 	// drop the connection
-	CL_CheckTimeout();
+	if (!clc.demoplaying) {
+		CL_CheckTimeout();
+	}
 
 	// send intentions now
 	CL_SendCmd();
@@ -3050,7 +3050,6 @@ void CL_Init( void ) {
 	cl_shownet = Cvar_Get ("cl_shownet", "0", CVAR_TEMP );
 	cl_showSend = Cvar_Get ("cl_showSend", "0", CVAR_TEMP );
 	cl_showTimeDelta = Cvar_Get ("cl_showTimeDelta", "0", CVAR_TEMP );
-	cl_freezeDemo = Cvar_Get ("cl_freezeDemo", "0", CVAR_TEMP );
 	rcon_client_password = Cvar_Get ("rconPassword", "", CVAR_TEMP, "Password for remote console access" );
 	cl_activeAction = Cvar_Get( "activeAction", "", CVAR_TEMP );
 
@@ -3156,8 +3155,8 @@ void CL_Init( void ) {
 	cl_coloredTextShadows = Cvar_Get("cl_coloredTextShadows", "0", CVAR_ARCHIVE, 
 "Toggled colored text shadows");
 
-	cl_afkTime = Cvar_Get("cl_afkTime", "5", CVAR_ARCHIVE, "Minutes to autorename to afk, 0 to disable");
-	cl_afkTimeUnfocused = Cvar_Get("cl_afkTimeUnfocused", "1", CVAR_ARCHIVE, "Minutes to autorename to afk while unfocused/minimized");
+	cl_afkTime = Cvar_Get("cl_afkTime", "10", CVAR_ARCHIVE, "Minutes to autorename to afk, 0 to disable");
+	cl_afkTimeUnfocused = Cvar_Get("cl_afkTimeUnfocused", "5", CVAR_ARCHIVE, "Minutes to autorename to afk while unfocused/minimized");
 	cl_unfocusedTime = 0;
 
 	cl_colorString = Cvar_Get("cl_colorString", "0", CVAR_ARCHIVE, "Bit value of selected colors in colorString");
@@ -3216,7 +3215,7 @@ void CL_Init( void ) {
 
 	G2VertSpaceClient = new CMiniHeap (G2_VERT_SPACE_CLIENT_SIZE * 1024);
 
-	CL_GenerateQKey();
+	CL_GenerateQKey(); //loda fixme, malware warning!
 	CL_UpdateGUID( NULL, 0 );
 
 //	Com_Printf( "----- Client Initialization Complete -----\n" );

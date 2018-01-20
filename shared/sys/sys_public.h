@@ -68,6 +68,7 @@ typedef enum {
 	SE_MOUSE,	// evValue and evValue2 are reletive signed x / y moves
 	SE_JOYSTICK_AXIS,	// evValue is an axis number and evValue2 is the current state (-127 to 127)
 	SE_CONSOLE,	// evPtr is a char*
+	SE_AIO_FCLOSE,  // evPtr is a pointer to fsh[h]
 	SE_MAX
 } sysEventType_t;
 
@@ -95,7 +96,6 @@ typedef intptr_t QDECL VMMainProc( int, intptr_t, intptr_t, intptr_t, intptr_t, 
 typedef intptr_t QDECL SystemCallProc( intptr_t, ... );
 typedef void * QDECL GetModuleAPIProc( int, ... );
 
-void	*Sys_LoadSPGameDll( const char *name, GetGameAPIProc **GetGameAPI );
 void	* QDECL Sys_LoadDll(const char *name, qboolean useSystemLib);
 void	* QDECL Sys_LoadLegacyGameDll( const char *name, VMMainProc **vmMain, SystemCallProc *systemcalls );
 void	* QDECL Sys_LoadGameDll( const char *name, GetModuleAPIProc **moduleAPI );

@@ -35,9 +35,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 # Customizable options
 option(BuildPortableVersion "Build portable version (does not read or write files from your user/home directory" ON)
 
-option(BuildMPEngine "Whether to create projects for the MP client (openjk.exe)" ON)
+option(BuildMPEngine "Whether to create projects for the MP client (eternaljk.exe)" ON)
 option(BuildMPRdVanilla "Whether to create projects for the MP default renderer (rd-eternaljk_x86.dll)" ON)
-option(BuildMPDed "Whether to create projects for the MP dedicated server (openjkded.exe)" ON)
+option(BuildMPDed "Whether to create projects for the MP dedicated server (eternaljkded.exe)" ON)
 option(BuildMPGame "Whether to create projects for the MP server-side gamecode (jampgamex86.dll)" ON)
 option(BuildMPCGame "Whether to create projects for the MP clientside gamecode (cgamex86.dll)" ON)
 option(BuildMPUI "Whether to create projects for the MP UI code (uix86.dll)" ON)
@@ -143,11 +143,11 @@ message("Git revision is ${GIT_SHA1}")
 # Binary names
 set(MPEngine "eternaljk.${Architecture}")
 set(MPVanillaRenderer "rd-eternaljk_${Architecture}")
-set(MPDed "openjkded.${Architecture}")
+set(MPDed "eternaljkded.${Architecture}")
 set(MPGame "jampgame${Architecture}")
 set(MPCGame "cgame${Architecture}")
 set(MPUI "ui${Architecture}")
-set(AssetsPk3 "eternaljk-assets-${Architecture}.pk3")
+set(BinsPk3 "japro-win-${Architecture}.pk3")
 # Library names
 set(MPBotLib "botlib")
 set(SharedLib "shared")
@@ -232,6 +232,9 @@ elseif (("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU") OR ("${CMAKE_C_COMPILER_ID}" M
 
 	# enable somewhat modern C++
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+	
+	# enable support for multithreading
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 	
 	if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall")
