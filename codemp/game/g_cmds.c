@@ -686,8 +686,13 @@ QINLINE void ResetPlayerTimers(gentity_t *ent, qboolean print)
 		//if (ent->client->ps.fd.forcePowerLevel[FP_LEVITATION] == 3) { //this is a sad hack..
 		ent->client->ps.powerups[PW_YSALAMIRI] = 0; //beh, only in racemode so wont fuck with ppl using amtele as checkpoints midcourse
 		ent->client->pers.haste = qfalse;
+		if (ent->health > 0) {
+			ent->client->ps.fd.forcePower = 100; //Reset their force back to full i guess!
+			ent->client->ps.stats[STAT_HEALTH] = ent->health = 100;
+			ent->client->ps.stats[STAT_ARMOR] = 25;
+		}
 		//}
-		if (ent->client->sess.movementStyle == 7 || ent->client->sess.movementStyle == 8) { //Get rid of their rockets when they tele/noclip..?
+		if (ent->client->sess.movementStyle == 7 || ent->client->sess.movementStyle == 8) { //Get rid of their rockets when they tele/noclip..? Do this for every style..
 			DeletePlayerProjectiles(ent);
 		}
 
@@ -702,7 +707,8 @@ QINLINE void ResetPlayerTimers(gentity_t *ent, qboolean print)
 
 		if (ent->client->pers.userName && ent->client->pers.userName[0]) {
 			if (ent->client->sess.raceMode && ent->client->pers.stats.startTime) {
-				ent->client->pers.stats.racetime += (trap->Milliseconds() - ent->client->pers.stats.startTime) * 0.001f;
+				ent->client->pers.stats.racetime += (trap->Milliseconds() - ent->client->pers.stats.startTime)*0.001f - ent->client->afkDuration*0.001f;
+				ent->client->afkDuration = 0;
 			}
 			if (ent->client->pers.stats.racetime > 120.0f) {
 				G_UpdatePlaytime(0, ent->client->pers.userName, (int)(ent->client->pers.stats.racetime+0.5f));
@@ -721,7 +727,6 @@ QINLINE void ResetPlayerTimers(gentity_t *ent, qboolean print)
 	ent->client->pers.stats.displacementFlag = 0;
 	ent->client->pers.stats.displacementFlagSamples = 0;
 	ent->client->ps.stats[STAT_JUMPTIME] = 0;
-	ent->client->ps.fd.forcePower = 100; //Reset their force back to full i guess!
 
 	ent->client->pers.stats.lastResetTime = level.time; //well im just not sure
 
@@ -2490,8 +2495,7 @@ static void Cmd_VGSCommand_f(gentity_t *ent)
 		return;
 	}
 
-	if (ent->client->sess.sessionTeam == TEAM_SPECTATOR ||
-		ent->client->tempSpectate >= level.time)
+	if (g_allowVGS.integer < 2 && (ent->client->sess.sessionTeam == TEAM_SPECTATOR || ent->client->tempSpectate >= level.time))
 	{
 		trap->SendServerCommand(ent - g_entities, va("print \"%s\n\"", G_GetStringEdString("MP_SVGAME", "NOVOICECHATASSPEC")));
 		return;
@@ -2526,7 +2530,7 @@ static void Cmd_VGSCommand_f(gentity_t *ent)
 		return;
 	}
 
-	te = G_TempEntity(vec3_origin, EV_VOICECMD_SOUND);
+	te = G_TempEntity(vec3_origin, EV_VOICECMD_SOUND); //Does this fully work from spec?
 	te->s.groundEntityNum = ent->s.number;
 	te->s.eventParm = G_SoundIndex((char *)bg_customVGSSoundNames[i]);
 	te->r.svFlags |= SVF_BROADCAST;
@@ -4383,18 +4387,20 @@ void Cmd_EngageDuel_f(gentity_t *ent, int dueltype)//JAPRO - Serverside - Fullfo
 			}
 			if (g_duelStartHealth.integer)
 			{
-				ent->health = ent->client->ps.stats[STAT_HEALTH] = g_duelStartHealth.integer;
 				ent->client->ps.stats[STAT_ARMOR] = g_duelStartArmor.integer;
-				challenged->health = challenged->client->ps.stats[STAT_HEALTH] = g_duelStartHealth.integer;
 				challenged->client->ps.stats[STAT_ARMOR] = g_duelStartArmor.integer;
 
 				if (dueltype == WP_ROCKET_LAUNCHER || dueltype == WP_CONCUSSION) { //Give more health in rocket duels etc
-					challenged->health *= 2;
-					ent->health *= 2;
+					challenged->health = challenged->client->ps.stats[STAT_HEALTH] = g_duelStartHealth.integer * 2;
+					ent->health = ent->client->ps.stats[STAT_HEALTH] = g_duelStartHealth.integer * 2;
 				}
 				else if (dueltype == 20) { //All
-					challenged->health *= 3;
-					ent->health *= 3;
+					challenged->health = challenged->client->ps.stats[STAT_HEALTH] = g_duelStartHealth.integer * 2;
+					ent->health = ent->client->ps.stats[STAT_HEALTH] = g_duelStartHealth.integer * 2;
+				}
+				else {
+					ent->health = ent->client->ps.stats[STAT_HEALTH] = g_duelStartHealth.integer;
+					challenged->health = challenged->client->ps.stats[STAT_HEALTH] = g_duelStartHealth.integer;
 				}
 			}
 			ent->client->ps.fd.forcePower = ent->client->ps.fd.forcePowerMax; //max force power too!
@@ -5648,7 +5654,7 @@ void Cmd_Aminfo_f(gentity_t *ent)
 	Q_strcat(buf, sizeof(buf), "logout ");
 	Q_strcat(buf, sizeof(buf), "changepassword ");
 	Q_strcat(buf, sizeof(buf), "stats ");
-	Q_strcat(buf, sizeof(buf), "top10 ");
+	Q_strcat(buf, sizeof(buf), "top ");
 	Q_strcat(buf, sizeof(buf), "whois");
 	trap->SendServerCommand(ent-g_entities, va("print \"%s\n\"", buf));
 
@@ -5685,31 +5691,28 @@ void Cmd_Aminfo_f(gentity_t *ent)
 
 	if (g_raceMode.integer) {
 		Q_strncpyz(buf, "   ^3Defrag commands: ", sizeof(buf));
-		Q_strcat(buf, sizeof(buf), "dfTodo ");
-		Q_strcat(buf, sizeof(buf), "dfTop10 ");
-		Q_strcat(buf, sizeof(buf), "dfTopRank ");
-		Q_strcat(buf, sizeof(buf), "notCompleted ");
-		Q_strcat(buf, sizeof(buf), "best ");
-		if (g_raceMode.integer > 1 && level.gametype == GT_FFA) 
+		Q_strcat(buf, sizeof(buf), "rTop ");
+		Q_strcat(buf, sizeof(buf), "rLatest ");
+		Q_strcat(buf, sizeof(buf), "rRank ");
+		Q_strcat(buf, sizeof(buf), "rWorst ");
+		Q_strcat(buf, sizeof(buf), "rHardest ");
+		if (g_raceMode.integer > 1) 
 			Q_strcat(buf, sizeof(buf), "race ");
-		if (level.gametype == GT_FFA) {
-			Q_strcat(buf, sizeof(buf), "jump ");
-			Q_strcat(buf, sizeof(buf), "movementStyle ");
-			Q_strcat(buf, sizeof(buf), "rocketChange ");
-			Q_strcat(buf, sizeof(buf), "hide ");
-			Q_strcat(buf, sizeof(buf), "practice ");
-			Q_strcat(buf, sizeof(buf), "launch ");
-			Q_strcat(buf, sizeof(buf), "warpList ");
-			Q_strcat(buf, sizeof(buf), "warp ");
-			if (g_allowRaceTele.integer) {
-				Q_strcat(buf, sizeof(buf), "amTele ");
-				Q_strcat(buf, sizeof(buf), "amTelemark ");
-				if (g_allowRaceTele.integer > 1)
-					Q_strcat(buf, sizeof(buf), "noclip ");
-			}
+		Q_strcat(buf, sizeof(buf), "jump ");
+		Q_strcat(buf, sizeof(buf), "move ");
+		Q_strcat(buf, sizeof(buf), "rocketChange ");
+		Q_strcat(buf, sizeof(buf), "hide ");
+		Q_strcat(buf, sizeof(buf), "practice ");
+		Q_strcat(buf, sizeof(buf), "launch ");
+		Q_strcat(buf, sizeof(buf), "warpList ");
+		Q_strcat(buf, sizeof(buf), "warp ");
+		if (g_allowRaceTele.integer) {
+			Q_strcat(buf, sizeof(buf), "amTele ");
+			Q_strcat(buf, sizeof(buf), "amTelemark ");
+			if (g_allowRaceTele.integer > 1)
+				Q_strcat(buf, sizeof(buf), "noclip ");
 		}
-		if (g_movementStyle.integer == 6 || level.gametype == GT_FFA)
-			Q_strcat(buf, sizeof(buf), "+button13 (dodge/dash/walljump)");
+		Q_strcat(buf, sizeof(buf), "+button13 (dodge/dash/walljump)");
 		trap->SendServerCommand(ent-g_entities, va("print \"%s\n\"", buf));
 	}
 
@@ -6633,6 +6636,15 @@ static void Cmd_MovementStyle_f(gentity_t *ent)
 		return;
 	}
 
+	//Do alive check here so they can see style list?
+	if ((ent->health <= 0
+			|| ent->client->tempSpectate >= level.time
+			|| ent->client->sess.sessionTeam == TEAM_SPECTATOR) )
+	{
+		trap->SendServerCommand( ent-g_entities, va( "print \"%s\n\"", G_GetStringEdString( "MP_SVGAME", "MUSTBEALIVE" ) ) );
+		return;
+	}
+
 	if (!g_raceMode.integer) {
 		trap->SendServerCommand(ent-g_entities, "print \"This command is not allowed in this gamemode!\n\"");
 		return;
@@ -6660,8 +6672,21 @@ static void Cmd_MovementStyle_f(gentity_t *ent)
 	style = RaceNameToInteger(mStyle);
 
 	if (style >= 0) {
+
+		if (ent->client->pers.stats.startTime || ent->client->pers.stats.startTimeFlag) {
+			trap->SendServerCommand(ent-g_entities, "print \"Movement style updated: timer reset.\n\"");
+			ResetPlayerTimers(ent, qtrue);
+		}
+		else {
+			if (ent->client->sess.movementStyle == 7 || ent->client->sess.movementStyle == 8) { //Get rid of their rockets when they tele/noclip..?
+				DeletePlayerProjectiles(ent);
+			}
+			trap->SendServerCommand(ent-g_entities, "print \"Movement style updated.\n\"");
+		}
+
 		ent->client->sess.movementStyle = style;
-		AmTeleportPlayer( ent, ent->client->ps.origin, ent->client->ps.viewangles, qtrue, qtrue ); //Good
+		if (ent->client->sess.sessionTeam != TEAM_SPECTATOR)
+			AmTeleportPlayer( ent, ent->client->ps.origin, ent->client->ps.viewangles, qtrue, qtrue ); //Good
 
 		if (ent->client->ourSwoopNum) {
 
@@ -6679,13 +6704,9 @@ static void Cmd_MovementStyle_f(gentity_t *ent)
 			ent->client->ourSwoopNum = 0;
 		}
 
-		if (style == MV_RJQ3 || style == MV_RJCPM) {
-			ent->client->ps.stats[STAT_WEAPONS] = (1 << WP_MELEE) + (1 << WP_SABER) + (1 << WP_ROCKET_LAUNCHER);
-		}
-		else {
-			ent->client->ps.stats[STAT_WEAPONS] = (1 << WP_MELEE) + (1 << WP_SABER) + (1 << WP_DISRUPTOR);
-			ent->client->ps.ammo[AMMO_ROCKETS] = 0;
-		}
+		ent->client->ps.ammo[AMMO_POWERCELL] = 0;
+		ent->client->ps.ammo[AMMO_ROCKETS] = 0;
+		ent->client->ps.weapon = WP_MELEE; //dont really understand this
 
 		if (style == MV_SWOOP) {
 			SpawnRaceSwoop(ent);
@@ -6701,13 +6722,6 @@ static void Cmd_MovementStyle_f(gentity_t *ent)
 		if (style == MV_SPEED) {
 			ent->client->ps.fd.forcePower = 50;
 		}
-
-		if (ent->client->pers.stats.startTime || ent->client->pers.stats.startTimeFlag) {
-			trap->SendServerCommand(ent-g_entities, "print \"Movement style updated: timer reset.\n\"");
-			ResetPlayerTimers(ent, qtrue);
-		}
-		else
-			trap->SendServerCommand(ent-g_entities, "print \"Movement style updated.\n\"");
 	}
 	else
 		trap->SendServerCommand( ent-g_entities, "print \"Usage: /move <siege, jka, qw, cpm, q3, pjk, wsw, rjq3, rjcpm, swoop, jetpack, speed, or sp>.\n\"" );
@@ -8317,6 +8331,7 @@ void Cmd_ACLogout_f( gentity_t *ent );
 void Cmd_ACRegister_f( gentity_t *ent );
 void Cmd_ACWhois_f( gentity_t *ent );
 void Cmd_DFRecent_f( gentity_t *ent );
+void Cmd_DFHardest_f( gentity_t *ent );
 void Cmd_DFTop10_f( gentity_t *ent );
 void Cmd_DFTodo_f( gentity_t *ent );
 void Cmd_DFTopRank_f( gentity_t *ent );
@@ -8413,11 +8428,13 @@ command_t commands[] = {
 	//{ "debugsetbodyanim",	Cmd_DebugSetBodyAnim_f,		CMD_CHEAT|CMD_ALIVE },
 	//{ "debugSetSaberMove",	Cmd_DebugSetSaberMove_f,	 CMD_CHEAT|CMD_ALIVE },
 
+	/*
 	{ "dfrecent",			Cmd_DFRecent_f,				CMD_NOINTERMISSION },
 	//{ "dfrefresh",			Cmd_DFRefresh_f,			CMD_NOINTERMISSION },
 	{ "dfTodo",				Cmd_DFTodo_f,				CMD_NOINTERMISSION },
 	{ "dftop10",			Cmd_DFTop10_f,				CMD_NOINTERMISSION },
 	{ "dftopRank",			Cmd_DFTopRank_f,			CMD_NOINTERMISSION },
+	*/
 
 	{ "duelteam",			Cmd_DuelTeam_f,				CMD_NOINTERMISSION },
 	{ "engage_fullforceduel",	Cmd_ForceDuel_f,		CMD_NOINTERMISSION },//JAPRO - Serverside - Fullforce Duels
@@ -8436,7 +8453,7 @@ command_t commands[] = {
 	{ "ignore",				Cmd_Ignore_f,				0 },//[JAPRO - Serverside - All - Ignore]
 	{ "jetpack",			Cmd_Jetpack_f,				CMD_NOINTERMISSION|CMD_ALIVE },
 
-	{ "jump",				Cmd_JumpChange_f,			CMD_NOINTERMISSION|CMD_ALIVE},
+	{ "jump",				Cmd_JumpChange_f,			CMD_NOINTERMISSION|CMD_ALIVE}, //cmd_alive not needed but i think it resets on joingame cuz forcepoints?
 
 	{ "kill",				Cmd_Kill_f,					CMD_ALIVE|CMD_NOINTERMISSION },
 	{ "killother",			Cmd_KillOther_f,			CMD_CHEAT|CMD_ALIVE },
@@ -8451,7 +8468,7 @@ command_t commands[] = {
 	
 	{ "mapents",			Cmd_MapEnts_f,				CMD_CHEAT|CMD_NOINTERMISSION },
 	{ "modversion",			Cmd_ModVersion_f,			0 },
-	{ "move",				Cmd_MovementStyle_f,		CMD_NOINTERMISSION|CMD_ALIVE},
+	{ "move",				Cmd_MovementStyle_f,		CMD_NOINTERMISSION},
 	{ "noclip",				Cmd_Noclip_f,				CMD_NOINTERMISSION },//change for admin?
 	{ "notarget",			Cmd_Notarget_f,				CMD_CHEAT|CMD_ALIVE|CMD_NOINTERMISSION },
 
@@ -8463,8 +8480,17 @@ command_t commands[] = {
 	{ "practice",			Cmd_Practice_f,				CMD_NOINTERMISSION|CMD_ALIVE},
 	{ "printstats",			Cmd_PrintStats_f,			CMD_NOINTERMISSION },
 	{ "race",				Cmd_Race_f,					CMD_NOINTERMISSION },
+
 	{ "register",			Cmd_ACRegister_f,			CMD_NOINTERMISSION },
+
+	{ "rhardest",			Cmd_DFHardest_f,			CMD_NOINTERMISSION },
+	{ "rlatest",			Cmd_DFRecent_f,				CMD_NOINTERMISSION },
+
 	{ "rocketchange",		Cmd_BackwardsRocket_f,		CMD_NOINTERMISSION|CMD_ALIVE},
+
+	{ "rrank",				Cmd_DFTopRank_f,			CMD_NOINTERMISSION },
+	{ "rtop",				Cmd_DFTop10_f,				CMD_NOINTERMISSION },
+	{ "rworst",				Cmd_DFTodo_f,				CMD_NOINTERMISSION },
 
 	{ "saber",				Cmd_Saber_f,				CMD_NOINTERMISSION },
 	{ "say",				Cmd_Say_f,					0 },
@@ -8495,12 +8521,12 @@ command_t commands[] = {
 	{ "throwflag",			Cmd_Throwflag_f,			CMD_ALIVE|CMD_NOINTERMISSION },
 
 #if _ELORANKING
-	{ "top10",				Cmd_DuelTop10_f,			CMD_NOINTERMISSION },
+	{ "top",				Cmd_DuelTop10_f,			CMD_NOINTERMISSION },
 #endif
 
 	{ "t_use",				Cmd_TargetUse_f,			CMD_CHEAT|CMD_ALIVE },
-	{ "vgs_cmd",			Cmd_VGSCommand_f,			CMD_NOINTERMISSION },//vgs
-	{ "voice_cmd",			Cmd_VoiceCommand_f,			0 },
+	{ "vgs_cmd",			Cmd_VGSCommand_f,			CMD_NOINTERMISSION },
+	{ "voice_cmd",			Cmd_VoiceCommand_f,			CMD_NOINTERMISSION },
 	{ "vote",				Cmd_Vote_f,					CMD_NOINTERMISSION },
 	{ "warp",				Cmd_Warp_f,					CMD_NOINTERMISSION|CMD_ALIVE },
 	{ "warplist",			Cmd_WarpList_f,				CMD_NOINTERMISSION },

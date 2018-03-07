@@ -1201,6 +1201,16 @@ void CL_ResetPureClientAtServer( void ) {
 	CL_AddReliableCommand( "vdr", qfalse );
 }
 
+void CL_Mod_Restart_f(void) {
+
+	if (Cmd_Argc() != 2) {
+		Com_Printf("Usage: loadmod <folder name>\n");
+		return;
+	}
+	Cvar_Set("fs_game", Cmd_Argv(1));
+	CL_Vid_Restart_f();
+}
+
 /*
 =================
 CL_Vid_Restart_f
@@ -2198,9 +2208,59 @@ static void CL_GetAfk(void) {
 	}
 }
 
+#ifdef _WIN32
+extern cvar_t	*con_notifywords;
+#define			MAX_NOTIFYWORDS 8
+char			notifyWords[MAX_NOTIFYWORDS][32];
+
+static void CL_AddNotificationName(char *str) {
+	int i;
+
+	//Com_Printf("Adding %s\n", str);
+	for (i = 0; i<MAX_NOTIFYWORDS; i++) {
+		//Com_Printf("Slot is %s", notifyWords[i]);
+		if (!strcmp(notifyWords[i], "")) {
+			//Com_Printf("Copying to %i\n", i);
+			Q_strncpyz(notifyWords[i], str, sizeof(notifyWords[i]));
+			return;
+		}
+	}
+	//Error, max words
+}
+
+static void CL_UpdateNotificationWords(void) {
+	char * pch;
+	char words[MAX_CVAR_VALUE_STRING];
+
+	Q_strncpyz(words, con_notifywords->string, sizeof(words));
+	memset(notifyWords, 0, sizeof(notifyWords));
+	pch = strtok(words, " ");
+	while (pch != NULL) {
+		CL_AddNotificationName(pch);
+		pch = strtok(NULL, " ");
+	}
+}
+/*
+//debug
+static void CL_PrintNotificationWords() {
+	int i;
+
+	for (i = 0; i<MAX_NOTIFYWORDS; i++) {
+		if (strcmp(notifyWords[i], "")) {
+			Com_Printf("Notification word: %s\n", notifyWords[i]);
+		}
+		else break;
+	}
+}
+*/
+#endif
+
 int cl_nameModifiedTime = 0;
 static int lastModifiedColors = 0;
 static int lastModifiedName = 0;
+#ifdef _WIN32
+static int lastModifiedNotifyName = 0;
+#endif
 static void CL_CheckCvarUpdate(void) {
 	if (lastModifiedColors != cl_colorString->modificationCount) {
 		// recalculate cl_colorStringCount
@@ -2217,6 +2277,13 @@ static void CL_CheckCvarUpdate(void) {
 		cl_nameModifiedTime = cls.realtime;
 		CL_GetAfk();
 	}
+#ifdef _WIN32
+	if (lastModifiedNotifyName != con_notifywords->modificationCount) {
+		lastModifiedNotifyName = con_notifywords->modificationCount;
+		CL_UpdateNotificationWords();
+		//CL_PrintNotificationWords();
+	}
+#endif
 }
 
 /*
@@ -2401,8 +2468,6 @@ void CL_InitRenderer( void ) {
 	cls.whiteShader = re->RegisterShader( "white" );
 	cls.consoleShader = re->RegisterShader( "console" );
 	cls.ratioFix = (float)(SCREEN_WIDTH * cls.glconfig.vidHeight) / (float)(SCREEN_HEIGHT * cls.glconfig.vidWidth);
-	g_console_field_width = cls.glconfig.vidWidth / SMALLCHAR_WIDTH - 2;
-	g_consoleField.widthInChars = g_console_field_width;
 }
 
 /*
@@ -2731,7 +2796,8 @@ static void CL_AddFavorite_f( void ) {
 void CL_Afk_f(void) {
 	char name[MAX_TOKEN_CHARS];
 	Cvar_VariableStringBuffer("name", name, sizeof(name));
-	if (cls.realtime - cl_nameModifiedTime <= 5000)Com_Printf("You must wait 5 seconds before changing your name again.\n");
+	if (cls.realtime - cl_nameModifiedTime <= 5000)
+		Com_Printf("You must wait 5 seconds before changing your name again.\n");
 	else {
 		if (cl_afkName) {
 			Cvar_Set("name", name + afkPrefixLen);
@@ -3163,7 +3229,7 @@ void CL_Init( void ) {
 	cl_colorStringCount = Cvar_Get("cl_colorStringCount", "0", CVAR_INTERNAL | CVAR_ROM | CVAR_ARCHIVE);
 	cl_colorStringRandom = Cvar_Get("cl_colorStringRandom", "2", CVAR_ARCHIVE, "Randomness of the colors changing, higher numbers are less random");
 
-	cl_logChat = Cvar_Get("cl_logChat", "1", CVAR_ARCHIVE, "Toggle chat logs");
+	cl_logChat = Cvar_Get("cl_logChat", "0", CVAR_ARCHIVE, "Toggle engine chat logs");
 
 	//
 	// register our commands
@@ -3179,6 +3245,7 @@ void CL_Init( void ) {
 	Cmd_AddCommand ("clientinfo", CL_Clientinfo_f, "Prints the userinfo variables" );
 	Cmd_AddCommand ("snd_restart", CL_Snd_Restart_f, "Restart sound" );
 	Cmd_AddCommand ("vid_restart", CL_Vid_Restart_f, "Restart the renderer - or change the resolution" );
+	Cmd_AddCommand ("loadmod", CL_Mod_Restart_f, "Restart the renderer (with specified mod folder) - or change the resolution");
 	Cmd_AddCommand ("fs_restart", CL_Fs_Restart_f, "Restart the filesystem" );
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from current server" );
 	Cmd_AddCommand ("cinematic", CL_PlayCinematic_f, "Play a cinematic video" );
@@ -3305,7 +3372,7 @@ void QDECL CL_LogPrintf(fileHandle_t fileHandle, const char *fmt, ...) {
 	time_t rawtime;
 	time(&rawtime);
 	
-	strftime(string, sizeof(string), "[%Y-%m-%d] [%H:%M:%S] ", gmtime(&rawtime));
+	strftime(string, sizeof(string), "[%Y-%m-%d] [%H:%M:%S] ", localtime(&rawtime));
 
 	len = strlen(string);
 

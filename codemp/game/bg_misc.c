@@ -210,7 +210,7 @@ const char *bg_customVGSSoundNames[MAX_CUSTOM_VGS_SOUNDS] = {
 	"*global_ooops",
 	"*global_quiet",
 	"*global_shazbot",
-	"*global_whoohoo",
+	"*global_woohoo",
 	"*global_yes",
 	"*need_cover",
 	"*need_driver",
@@ -247,13 +247,13 @@ const char *bg_customVGSSoundNames[MAX_CUSTOM_VGS_SOUNDS] = {
 	"*selftask_defenses",
 	"*selftask_deploysensors",
 	"*selftask_deployturrets",
-	"*selftask_forcefield",
+	"*selftask_forcefields",
 	"*selftask_onit",
 	"*selftask_vehicle",
 	"*upgradeself_generator",
 	"*upgradeself_sensor",
 	"*upgradeself_turret",
-	"*target_acquiered",
+	"*target_acquired",
 	"*target_base",
 	"*target_destroyed",
 	"*target_fireonmy",
@@ -2002,7 +2002,15 @@ gitem_t	*BG_FindItemForWeapon( weapon_t weapon ) {
 		}
 	}
 
-	Com_Error( ERR_DROP, "Couldn't find item for weapon %i", weapon);
+#ifdef _GAME
+	//Debug this crash
+	Com_Printf("BG_FindItemForWeapon crash\n"); 
+	Svcmd_GameMem_f();
+	if (it->classname)
+		Com_Printf("Last classname %s type %i, tag %i, end: %i\n", it->classname, it->giType, it->giTag, it);
+#endif
+
+	Com_Error( ERR_DROP, "Couldn't find item for weapon %i", weapon); //This caused a crash once (wp_blaster)
 	return NULL;
 }
 

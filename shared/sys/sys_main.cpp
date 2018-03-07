@@ -409,6 +409,23 @@ static void *Sys_LoadDllFromPaths( const char *filename, const char *gamedir, co
 		}
 	}
 
+	if (searchFlags & SEARCH_PATH_ETERNALJK)
+	{
+		for (size_t i = 0; i < numPaths; i++)
+		{
+			const char *libDir = searchPaths[i];
+			if (!libDir[0])
+				continue;
+
+			fn = FS_BuildOSPath(libDir, ETERNALJKGAME, filename);
+			libHandle = Sys_LoadLibrary(fn);
+			if (libHandle)
+				return libHandle;
+
+			Com_Printf("%s(%s) failed: \"%s\"\n", callerName, fn, Sys_LibraryError());
+		}
+	}
+
 	if ( searchFlags & SEARCH_PATH_BASE )
 	{
 		for ( size_t i = 0; i < numPaths; i++ )
@@ -425,24 +442,7 @@ static void *Sys_LoadDllFromPaths( const char *filename, const char *gamedir, co
 			Com_Printf( "%s(%s) failed: \"%s\"\n", callerName, fn, Sys_LibraryError() );
 		}
 	}
-
-	if ( searchFlags & SEARCH_PATH_ETERNALJK )
-	{
-		for ( size_t i = 0; i < numPaths; i++ )
-		{
-			const char *libDir = searchPaths[i];
-			if ( !libDir[0] )
-				continue;
-
-			fn = FS_BuildOSPath( libDir, ETERNALJKGAME, filename );
-			libHandle = Sys_LoadLibrary( fn );
-			if ( libHandle )
-				return libHandle;
-
-			Com_Printf( "%s(%s) failed: \"%s\"\n", callerName, fn, Sys_LibraryError() );
-		}
-	}
-
+		
 	if ( searchFlags & SEARCH_PATH_ROOT )
 	{
 		for ( size_t i = 0; i < numPaths; i++ )
@@ -482,12 +482,12 @@ void *Sys_LoadLegacyGameDll( const char *name, VMMainProc **vmMain, SystemCallPr
 #endif
 	{
 		UnpackDLLResult unpackResult = Sys_UnpackDLL(filename);
-		if ( !unpackResult.succeeded )
+		if (!unpackResult.succeeded)
 		{
-			if ( Sys_DLLNeedsUnpacking() )
+			if (Sys_DLLNeedsUnpacking())
 			{
 				FreeUnpackDLLResult(&unpackResult);
-				Com_DPrintf( "Sys_LoadLegacyGameDll: Failed to unpack %s from PK3.\n", filename );
+				Com_DPrintf("Sys_LoadLegacyGameDll: Failed to unpack %s from PK3.\n", filename);
 				return NULL;
 			}
 		}
@@ -525,7 +525,7 @@ void *Sys_LoadLegacyGameDll( const char *name, VMMainProc **vmMain, SystemCallPr
 				};
 				size_t numPaths = ARRAY_LEN( searchPaths );
 
-				libHandle = Sys_LoadDllFromPaths( filename, gamedir, searchPaths, numPaths, SEARCH_PATH_BASE | SEARCH_PATH_MOD, __FUNCTION__ );
+				libHandle = Sys_LoadDllFromPaths( filename, gamedir, searchPaths, numPaths, SEARCH_PATH_BASE | SEARCH_PATH_ETERNALJK | SEARCH_PATH_MOD, __FUNCTION__ );
 				if ( !libHandle )
 					return NULL;
 			}
@@ -562,12 +562,12 @@ void *Sys_LoadGameDll( const char *name, GetModuleAPIProc **moduleAPI )
 #endif
 	{
 		UnpackDLLResult unpackResult = Sys_UnpackDLL(filename);
-		if ( !unpackResult.succeeded )
+		if (!unpackResult.succeeded)
 		{
-			if ( Sys_DLLNeedsUnpacking() )
+			if (Sys_DLLNeedsUnpacking())
 			{
 				FreeUnpackDLLResult(&unpackResult);
-				Com_DPrintf( "Sys_LoadLegacyGameDll: Failed to unpack %s from PK3.\n", filename );
+				Com_DPrintf("Sys_LoadLegacyGameDll: Failed to unpack %s from PK3.\n", filename);
 				return NULL;
 			}
 		}
@@ -605,7 +605,7 @@ void *Sys_LoadGameDll( const char *name, GetModuleAPIProc **moduleAPI )
 				};
 				size_t numPaths = ARRAY_LEN( searchPaths );
 
-				libHandle = Sys_LoadDllFromPaths( filename, gamedir, searchPaths, numPaths, SEARCH_PATH_BASE | SEARCH_PATH_MOD, __FUNCTION__ );
+				libHandle = Sys_LoadDllFromPaths( filename, gamedir, searchPaths, numPaths, SEARCH_PATH_BASE | SEARCH_PATH_ETERNALJK | SEARCH_PATH_MOD, __FUNCTION__ );
 				if ( !libHandle )
 					return NULL;
 			}
@@ -726,6 +726,17 @@ int main ( int argc, char* argv[] )
 	}
 
 	Com_Init (commandLine);
+
+#ifndef DEDICATED
+	SDL_version compiled;
+	SDL_version linked;
+
+	SDL_VERSION( &compiled );
+	SDL_GetVersion( &linked );
+
+	Com_Printf( "SDL Version Compiled: %d.%d.%d\n", compiled.major, compiled.minor, compiled.patch );
+	Com_Printf( "SDL Version Linked: %d.%d.%d\n", linked.major, linked.minor, linked.patch );
+#endif
 
 	NET_Init();
 

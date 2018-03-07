@@ -612,11 +612,18 @@ void IN_Init( void *windowData )
 	// mouse variables
 	in_mouse = Cvar_Get( "in_mouse", "1", CVAR_ARCHIVE );
 	in_nograb = Cvar_Get( "in_nograb", "0", CVAR_ARCHIVE_ND );
-	in_mouserepeat = Cvar_Get("in_mouserepeat", "0", CVAR_ARCHIVE_ND);
+	in_mouserepeat = Cvar_Get("in_mouserepeat", "0", CVAR_ARCHIVE);
 
 	SDL_StartTextInput( );
 
 	mouseAvailable = (qboolean)( in_mouse->value != 0 );
+	if (in_mouse->integer == 2) {
+		Com_DPrintf("IN_Init: Not using raw input\n");
+		SDL_SetHint("SDL_MOUSE_RELATIVE_MODE_WARP", "1");
+	} else {
+		Com_DPrintf("IN_Init: Using raw mouse input\n");
+		SDL_SetHint("SDL_MOUSE_RELATIVE_MODE_WARP", "0");
+	}
 	IN_DeactivateMouse( );
 
 	int appState = SDL_GetWindowFlags( SDL_window );
@@ -799,12 +806,12 @@ static void IN_ProcessEvents( void )
 
 	if( !SDL_WasInit( SDL_INIT_VIDEO ) )
 			return;
-	#ifdef _WIN32
+#ifdef _WIN32
 	if (com_unfocused->integer == 1 && con_alert == qtrue) {
 		GLimp_Alert();
 		con_alert = qfalse;
 	}
-	#endif
+#endif
 
 	while( SDL_PollEvent( &e ) )
 	{
@@ -912,9 +919,10 @@ static void IN_ProcessEvents( void )
 						Cvar_SetValue( "com_unfocused", 1 );
 						SNDDMA_Activate( qfalse );
 						cl_unfocusedTime = cls.realtime;
-						#ifdef _WIN32
+#ifdef _WIN32
 						con_alert = qfalse;
-						#endif
+#endif
+						Cbuf_ExecuteText(EXEC_NOW, "+button1");
 						break;
 					}
 
@@ -927,6 +935,7 @@ static void IN_ProcessEvents( void )
 							CL_Afk_f();
 							cls.afkTime = cls.realtime;
 						}
+						Cbuf_ExecuteText(EXEC_NOW, "-button1");
 						break;
 					}
 				}

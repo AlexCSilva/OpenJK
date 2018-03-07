@@ -29,8 +29,8 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 #define PRODUCT_NAME			"eternaljk"
 
-#define CLIENT_WINDOW_TITLE "EternalJK (MP)"
-#define CLIENT_CONSOLE_TITLE "EternalJK Console (MP)"
+#define CLIENT_WINDOW_TITLE "EternalJK"
+#define CLIENT_CONSOLE_TITLE "EternalJK Console"
 #define HOMEPATH_NAME_UNIX "eternaljk"
 #define HOMEPATH_NAME_WIN "EternalJK"
 #define HOMEPATH_NAME_MACOSX HOMEPATH_NAME_WIN
@@ -901,6 +901,10 @@ typedef enum {
 #define MAX_RADAR_ENTITIES	MAX_GENTITIES
 #define MAX_TERRAINS		1//32 //rwwRMG: inserted
 #define MAX_LOCATIONS		64
+
+//Logical entities
+#define	MAX_LOGICENTITIES	3072
+#define	MAX_ENTITIESTOTAL	(MAX_GENTITIES+MAX_LOGICENTITIES)
 
 #define	GENTITYNUM_BITS	10		// don't need to send any more
 #define	MAX_GENTITIES	(1<<GENTITYNUM_BITS)
